@@ -1,0 +1,33 @@
+## Obsidian Vault .gitignore
+
+# Obsidian workspace (device-specific layout, pane positions)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Obsidian hotkeys (device-specific keybindings)
+.obsidian/hotkeys.json
+
+# Obsidian cache
+.obsidian/cache
+
+# Plugin runtime data (device-specific settings, tokens, state)
+.obsidian/plugins/*/data.json
+
+# Obsidian sync config (if using Obsidian Sync)
+.obsidian/sync-config.json
+
+# Obsidian drafts
+.obsidian/drafts/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*~
+~$*
+*.tmp

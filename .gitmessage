@@ -1,0 +1,58 @@
+
+# ──────────────────────────────────────────────────────────────────
+# UPPERCASE Conventional Commits — Content Workspace
+# ──────────────────────────────────────────────────────────────────
+#
+# Format:
+#   TYPE(scope): description
+#
+#   [optional body]
+#
+#   [optional footer(s)]
+#
+# ──────────────────────────────────────────────────────────────────
+# TYPE (required, UPPERCASE) — pick one:
+#
+#   CONTENT   New or updated vault content (notes, pages)
+#   DOCS      Changes to documentation or guides
+#   FIX       Corrections to existing content (typos, broken links)
+#   REFACTOR  Reorganization without changing meaning (moves, renames)
+#   CHORE     Maintenance (templates, folder org, vault config)
+#   META      Changes to vault infrastructure (.obsidian, .claude, .gitignore)
+#   STYLE     Formatting changes only (no content change)
+#
+# ──────────────────────────────────────────────────────────────────
+# SCOPE (optional) — area of vault affected:
+#   e.g., (inbox), (templates), (archive), (config)
+#
+# ──────────────────────────────────────────────────────────────────
+# BODY (optional) — explain what and why, not how.
+#   Separate from description with a blank line.
+#
+# FOOTER (optional) — references:
+#   e.g., Closes #42
+#
+# ──────────────────────────────────────────────────────────────────
+# AI ATTRIBUTION
+#
+# Include these lines ONLY when applicable:
+#
+#   🤖 Generated with [Tool Name]
+#     → Include when AI generated the commit MESSAGE
+#     → Examples:
+#       🤖 Generated with Claude Code
+#       🤖 Generated with GitHub Copilot
+#
+#   Co-Authored-By: [Tool and Model] <noreply@provider.com>
+#     → Include when AI helped generate the CODE/CHANGES
+#     → Examples:
+#       Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+#       Co-Authored-By: GitHub Copilot <noreply@github.com>
+#
+# Rules:
+#   - AI wrote both message AND content  → include BOTH lines
+#   - AI wrote message, human wrote content → include 🤖 line only
+#   - Human wrote message, AI wrote content → include Co-Authored-By only
+#   - No AI involvement                    → include neither
+#
+# ──────────────────────────────────────────────────────────────────
