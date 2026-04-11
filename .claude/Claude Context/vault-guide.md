@@ -45,7 +45,8 @@ This is an Obsidian vault workspace managed with git. Content is organized in ma
 ## Obsidian Configuration
 
 - `.obsidian/` contains committed vault settings (app, appearance, plugins, templates)
-- Device-specific files (workspace, hotkeys, plugin data) are gitignored
+- Device-specific files (workspace, hotkeys) are gitignored
+- Plugin files (including `data.json`) are tracked in git for cross-device sync — disable auto-updates in Obsidian to prevent version drift
 - **Templater** is the only pre-configured community plugin — templates folder is `🫥 Templater/`
 
 ## AI Editing Guidelines

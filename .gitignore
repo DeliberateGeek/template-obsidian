@@ -10,10 +10,8 @@
 # Obsidian cache
 .obsidian/cache
 
-# Plugin runtime data (device-specific settings, tokens, state)
-.obsidian/plugins/*/data.json
-# Exception: Templater baseline config (templates_folder, safe defaults)
-!.obsidian/plugins/templater-obsidian/data.json
+# Plugin files are tracked in git for cross-device sync
+# (Disable auto-updates in Obsidian to prevent version drift)
 
 # Obsidian sync config (if using Obsidian Sync)
 .obsidian/sync-config.json
