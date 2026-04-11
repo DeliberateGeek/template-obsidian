@@ -11,7 +11,8 @@ This is an Obsidian vault workspace managed with git. Content is organized in ma
 | `📥 Inbox/` | Quick captures and unsorted notes |
 | `📦 Archive/` | Completed or retired content |
 | `🫥 Attachments/` | Images, PDFs, media files |
-| `🫥 Templates/` | Templater templates for new notes |
+| `🫥 Templater/` | Templater community plugin templates (uses `tp.` syntax) |
+| `🫥 Templates/` | Obsidian core templates (simple variable substitution) |
 | `Home.md` | Vault home page and navigation hub |
 | `Decision Rules.md` | Vault-specific conventions |
 
@@ -45,7 +46,7 @@ This is an Obsidian vault workspace managed with git. Content is organized in ma
 
 - `.obsidian/` contains committed vault settings (app, appearance, plugins, templates)
 - Device-specific files (workspace, hotkeys, plugin data) are gitignored
-- **Templater** is the only pre-configured community plugin
+- **Templater** is the only pre-configured community plugin — templates folder is `🫥 Templater/`
 
 ## AI Editing Guidelines
 

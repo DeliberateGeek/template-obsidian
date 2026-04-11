@@ -12,6 +12,8 @@
 
 # Plugin runtime data (device-specific settings, tokens, state)
 .obsidian/plugins/*/data.json
+# Exception: Templater baseline config (templates_folder, safe defaults)
+!.obsidian/plugins/templater-obsidian/data.json
 
 # Obsidian sync config (if using Obsidian Sync)
 .obsidian/sync-config.json
