@@ -210,20 +210,20 @@ deprecated:
 # ─────────────────────────────────────────────────────────────
 # TAG FORMAT RULES — mechanical validation constraints
 # ─────────────────────────────────────────────────────────────
-# These rules are invariant and enforced by the Linter (layer 1)
-# and the audit script (layer 2). Documented here for completeness;
-# the Linter config is the enforcement mechanism.
+# These rules are invariant and enforced by the audit scripts (layer 1)
+# and Claude (layer 3). Documented here for completeness;
+# enforcement is via scripts + Claude judgment at capture and audit time.
 tag_format_rules:
   hard_fail:
     - id: lowercase
       description: Tags must be lowercase
       auto_fix: true
-      enforcement: Obsidian Linter on save
+      enforcement: Script auto-fix at audit; Claude auto-fix at capture
 
     - id: kebab-case
       description: Multi-word tags use kebab-case (hyphens, not underscores or camelCase)
       auto_fix: true
-      enforcement: Obsidian Linter on save
+      enforcement: Script auto-fix at audit; Claude auto-fix at capture
 
     - id: leading-letter
       description: Tags must start with a letter (not a digit or symbol)

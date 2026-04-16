@@ -140,12 +140,11 @@ Four layers, increasing in cost and judgment required:
 
 | Layer | Mechanism | Trigger | Deterministic? |
 |-------|-----------|---------|----------------|
-| 1. Syntactic | Obsidian Linter | On save | Yes |
-| 2. Canonical | Script / Skill | Automatic | Yes |
-| 3. Referential | Dataview queries | Automatic | Yes |
-| 4. Semantic | Claude judgment | On-demand + opportunistic | No |
+| 1. Canonical | Script / Skill | Automatic | Yes |
+| 2. Referential | Dataview queries | Automatic | Yes |
+| 3. Semantic | Claude judgment | On-demand + opportunistic | No |
 
-Layers 1-3 catch mechanical errors. Layer 4 catches misclassification, missing dimensions, and over-tagging — things only judgment can evaluate.
+Layers 1-2 catch mechanical errors. Layer 3 catches misclassification, missing dimensions, and over-tagging — things only judgment can evaluate.
 
 ## Audit Log
 
@@ -170,7 +169,6 @@ Layers 1-3 catch mechanical errors. Layer 4 catches misclassification, missing d
 ### Recommended
 
 - **Templater** — content-type templates generated from schema populate required/optional frontmatter
-- **Obsidian Linter** — enforces hard-fail format rules on save
 - **Tag Wrangler** — bulk rename (enables alias-to-canonical normalization)
 
 ### Native (enable)
