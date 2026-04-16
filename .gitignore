@@ -1,33 +1,36 @@
-## Obsidian Vault .gitignore
-
-# Obsidian workspace (device-specific layout, pane positions)
+# Ignore volatile UI-related state (machine-specific)
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
-
-# Obsidian hotkeys (device-specific keybindings)
+.obsidian/workspace.json.bak
 .obsidian/hotkeys.json
 
-# Obsidian cache
-.obsidian/cache
+# Ignore cache and temporary files
+.obsidian/cache/
+.obsidian/drafts/
+.obsidian/plugins/*/cache*
+.obsidian/snippets/*/cache*
 
 # Plugin files are tracked in git for cross-device sync
 # (Disable auto-updates in Obsidian to prevent version drift)
 
-# Obsidian sync config (if using Obsidian Sync)
+# Ignore sync and history
 .obsidian/sync-config.json
+.obsidian/.DS_Store
 
-# Obsidian drafts
-.obsidian/drafts/
-
-# Claude Code local settings
-.claude/settings.local.json
-
-# OS files
+# Ignore system files and trash
 .DS_Store
 Thumbs.db
+.trash/
+*.tmp
+
+# Ignore OS-specific files
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Desktop.ini
 
-# Temporary files
-*~
-~$*
-*.tmp
+# Ignore Claude Code temporary files
+.claude/temp/
+.claude/settings.local.json
+.claude/settings.json.backup*
+critique-prompt-*.txt
