@@ -1,0 +1,259 @@
+# metadata-schema.yaml — Structural schema for the Obsidian metadata framework
+#
+# This file defines the shape of vault-metadata.yaml (the per-vault config).
+# It is invariant across all vaults — baked into template-obsidian.
+# Validation scripts and the /audit-metadata Skill read this file
+# to perform mechanical conformance checks.
+#
+# See metadata-philosophy.md for the narrative design rationale.
+# See metadata-examples.md for worked classification cases.
+
+# ─────────────────────────────────────────────────────────────
+# VAULT — top-level vault configuration
+# ─────────────────────────────────────────────────────────────
+vault:
+  name:
+    type: string
+    required: true
+    description: Human-readable vault name (e.g., "PersonalVault")
+
+  description:
+    type: string
+    required: false
+    description: One-sentence purpose of this vault
+
+  promotion_threshold:
+    type: int
+    default: 8
+    description: >
+      Minimum count of notes sharing a property value before
+      property-to-folder promotion is flagged as a candidate.
+
+  retention:
+    audit_log_days:
+      type: int
+      default: 90
+      description: >
+        Days to retain audit log files before cleanup.
+        Aligns with default staleness threshold for active reference notes.
+
+# ─────────────────────────────────────────────────────────────
+# CONTENT TYPES — what KIND of note this is
+# ─────────────────────────────────────────────────────────────
+# Each entry describes a recognized content type in the vault.
+# Content types may be expressed as folder, tag, or both.
+content_types:
+  entry_schema:
+    id:
+      type: string
+      required: true
+      format: kebab-case
+      description: Unique identifier for this content type (e.g., "reference", "session-log")
+
+    description:
+      type: string
+      required: true
+      description: Human-readable explanation of what this content type covers
+
+    folder:
+      type: string
+      required: false
+      description: >
+        Folder path for this content type (e.g., "Knowledge/Homelab/").
+        Null if the content type is tag-only with no dedicated folder.
+
+    also_tag:
+      type: bool
+      default: true
+      description: >
+        Whether the content type is also expressed as a tag
+        (belt-and-suspenders with folder). Defaults to true.
+
+    properties:
+      required:
+        type: list-of-strings
+        default: []
+        description: >
+          Property names that MUST be present on notes of this type.
+          Names reference entries in the top-level properties registry.
+
+      optional:
+        type: list-of-strings
+        default: []
+        description: >
+          Property names that MAY be present on notes of this type.
+          Useful for specialized content types with structured frontmatter.
+
+    lifecycle:
+      applicable:
+        type: bool
+        required: true
+        description: >
+          Whether this content type participates in staleness tracking.
+          If false, notes of this type are never flagged stale.
+
+      property:
+        type: string
+        required_if: applicable
+        description: >
+          Frontmatter property that carries the lifecycle state
+          (typically "status"). Required when applicable is true.
+
+      values:
+        type: list-of-strings
+        required_if: applicable
+        description: >
+          Valid values for the lifecycle property
+          (e.g., [active, archived, completed]).
+
+      staleness:
+        type: map-string-to-duration
+        required: false
+        description: >
+          Per-status-value staleness thresholds. Keys are lifecycle
+          property values; values are durations (e.g., "90d", "365d").
+          Statuses not listed have no staleness threshold.
+          Example: { active: 90d, someday: 365d }
+
+# ─────────────────────────────────────────────────────────────
+# TOPICS — what the note is ABOUT (tag-only)
+# ─────────────────────────────────────────────────────────────
+# Topics are flat, atomic tags representing retrieval dimensions.
+# Each topic has a canonical id and optional aliases.
+topics:
+  entry_schema:
+    id:
+      type: string
+      required: true
+      format: kebab-case
+      description: Canonical tag for this topic (e.g., "homelab", "docker")
+
+    aliases:
+      type: list-of-strings
+      default: []
+      description: >
+        Alternative spellings/synonyms that auto-normalize to the canonical id.
+        Declared aliases are silently normalized; undeclared near-matches
+        require confirmation. Example: [containers, docker-compose, compose]
+
+    deprecated:
+      type: bool
+      default: false
+      description: >
+        Whether this topic has been retired. Deprecated topics remain
+        in the list for historical context and to catch re-introduction.
+        Notes still carrying a deprecated tag are flagged during audit.
+
+# ─────────────────────────────────────────────────────────────
+# PROPERTIES — vocabulary registry
+# ─────────────────────────────────────────────────────────────
+# Every frontmatter field the vault recognizes, with its data type
+# and cardinality. Content types reference these by name in their
+# required/optional lists.
+properties:
+  entry_schema:
+    name:
+      type: string
+      required: true
+      description: Property name as it appears in frontmatter (e.g., "status", "host")
+
+    type:
+      type: enum
+      values: [string, enum, int, date, link]
+      required: true
+      description: >
+        Data type. "link" means a wiki-link value (e.g., "[[epsilon3]]").
+        "enum" means a constrained set of values (listed in the values field).
+
+    cardinality:
+      type: enum
+      values: [single, multi]
+      required: true
+      description: >
+        Whether the property holds one value or a list.
+        "single" for scalar fields; "multi" for array/list fields.
+
+    values:
+      type: list
+      required_if: "type == enum"
+      description: >
+        Valid values for enum-typed properties.
+        Example for status: [active, archived, completed, someday, draft]
+
+    description:
+      type: string
+      required: false
+      description: Human-readable explanation of what this property represents
+
+# ─────────────────────────────────────────────────────────────
+# DEPRECATED — retired entries kept for historical context
+# ─────────────────────────────────────────────────────────────
+# Tags and properties that were once canonical but have been
+# retired. Kept here so audit can flag re-introduction and
+# suggest the replacement.
+deprecated:
+  tags:
+    type: list-of-strings
+    default: []
+    description: >
+      Retired tag names. Notes still carrying these tags are flagged
+      during audit. The deprecated topic entry (above) provides the
+      redirect target if one exists.
+
+  properties:
+    type: list-of-strings
+    default: []
+    description: >
+      Retired property names. Notes still using these properties
+      are flagged during audit for migration to the replacement field.
+
+# ─────────────────────────────────────────────────────────────
+# TAG FORMAT RULES — mechanical validation constraints
+# ─────────────────────────────────────────────────────────────
+# These rules are invariant and enforced by the Linter (layer 1)
+# and the audit script (layer 2). Documented here for completeness;
+# the Linter config is the enforcement mechanism.
+tag_format_rules:
+  hard_fail:
+    - id: lowercase
+      description: Tags must be lowercase
+      auto_fix: true
+      enforcement: Obsidian Linter on save
+
+    - id: kebab-case
+      description: Multi-word tags use kebab-case (hyphens, not underscores or camelCase)
+      auto_fix: true
+      enforcement: Obsidian Linter on save
+
+    - id: leading-letter
+      description: Tags must start with a letter (not a digit or symbol)
+      auto_fix: false
+      enforcement: Reject and prompt for correction
+
+    - id: min-length
+      description: Tags must be at least 2 characters
+      auto_fix: false
+      enforcement: Reject and prompt for correction
+
+  soft_flag:
+    - id: no-punctuation
+      description: No punctuation other than hyphen (bans "/" — hierarchical tags rejected)
+      enforcement: Surface at session-end
+
+    - id: max-length
+      description: Tags should not exceed ~30 characters
+      enforcement: Surface at session-end
+
+# ─────────────────────────────────────────────────────────────
+# AUDIT LOG FORMAT — daily rotation conventions
+# ─────────────────────────────────────────────────────────────
+audit_log:
+  location: "Meta/Audit Logs/"
+  filename_format: "YYYY-MM-DD.md"
+  rotation: daily
+  scope: Claude-initiated changes only
+  retention_default_days: 90
+  description: >
+    Audit logs track metadata changes made by Claude (user edits are
+    captured by git). Each daily file contains timestamped entries.
+    Cleanup is performed by /audit-metadata and metadata-audit-cleanup.ps1.
