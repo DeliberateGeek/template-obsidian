@@ -75,12 +75,6 @@ Metadata changes made by Claude are logged to `🫥 Meta/Audit Logs/YYYY-MM-DD.m
 - Must start with a letter (rejected, requires human decision)
 - Minimum 2 characters (rejected, requires human decision)
 
-## Git Workflow
-
-- **Branch:** Single `main` branch — commit directly, no PRs needed
-- **Commit format:** UPPERCASE Conventional Commits (see `.gitmessage`)
-- **Commit types:** CONTENT, DOCS, FIX, REFACTOR, CHORE, META, STYLE
-
 ## Obsidian Configuration
 
 - `.obsidian/` contains committed vault settings (app, appearance, plugins, templates)

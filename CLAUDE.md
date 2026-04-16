@@ -15,7 +15,7 @@ Vault conventions and AI guidance live in `.claude/Claude Context/` — Obsidian
 ## Quick Reference
 
 - **Vault type:** Obsidian
-- **Commit format:** UPPERCASE Conventional Commits (see `.gitmessage`)
+- **Commit format:** UPPERCASE Conventional Commits (see `commit-message-guidelines.md`)
 - **Branching:** Single `main` branch (no gitflow)
 - **Link style:** Wiki-style links only (`[[Note]]`, `[[#Section]]`)
 - **Metadata:** Tag by dimension, not by detail — see `metadata-philosophy.md`; canonical list at `🫥 Meta/vault-metadata.yaml`

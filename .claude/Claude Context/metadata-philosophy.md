@@ -190,8 +190,3 @@ Layers 1-2 catch mechanical errors. Layer 3 catches misclassification, missing d
 ## Provisioning Contract
 
 The `.template-version` marker in `Meta/` records which framework version a vault is running. `/migrate-vault --update` diffs local against current template and proposes targeted updates — enables long-term maintenance without re-seeding.
-
-## Commit Conventions
-
-- Commit type: **META** (enumerated in `.gitmessage`)
-- Suggested scope: `metadata` (e.g., `META(metadata): seed vault-metadata`)
