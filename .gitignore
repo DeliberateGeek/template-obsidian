@@ -33,4 +33,7 @@ Desktop.ini
 .claude/temp/
 .claude/settings.local.json
 .claude/settings.json.backup*
+.claude/last-session-start.json
+.claude/last-session-end.json
+.claude/session-annotations.json
 critique-prompt-*.txt
