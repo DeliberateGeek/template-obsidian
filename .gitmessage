@@ -23,7 +23,7 @@
 #
 # ──────────────────────────────────────────────────────────────────
 # SCOPE (optional) — area of vault affected:
-#   e.g., (inbox), (templates), (archive), (config)
+#   e.g., (inbox), (templates), (archive), (config), (metadata)
 #
 # ──────────────────────────────────────────────────────────────────
 # BODY (optional) — explain what and why, not how.

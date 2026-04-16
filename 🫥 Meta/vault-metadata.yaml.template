@@ -1,0 +1,111 @@
+# 🫥 Meta/vault-metadata.yaml
+# Conforms to schema at .claude/Claude Context/metadata-schema.yaml
+# Source of truth. Rendered view auto-generated to 🫥 Meta/Canonical Metadata.md.
+
+vault:
+  name: ReplaceWithVaultName
+  description: One-sentence purpose of this vault
+  promotion_threshold: 8           # property -> folder promotion count
+  retention:
+    audit_log_days: 90
+
+# ─────────────────────────────────────────────────────────────
+# CONTENT TYPES — what KIND of note this is.
+# May be expressed as folder, tag, or both.
+# ─────────────────────────────────────────────────────────────
+content_types:
+  - id: reference
+    description: Reference docs, guides, cheat sheets
+    folder: null
+    also_tag: true
+    properties:
+      required: [status]
+      optional: []
+    lifecycle:
+      applicable: true
+      property: status
+      values: [active, archived]
+      staleness:
+        active: 90d
+
+  - id: learning
+    description: Learning plans and research
+    folder: null
+    also_tag: true
+    properties:
+      required: [status]
+      optional: []
+    lifecycle:
+      applicable: true
+      property: status
+      values: [active, completed, someday]
+      staleness:
+        active: 60d
+        someday: 365d
+
+  # Add specialized types as they reveal themselves.
+  # Example — a content type with scoped properties:
+  #
+  # - id: service-reference
+  #   description: Operational reference for a running service
+  #   folder: null
+  #   also_tag: true
+  #   properties:
+  #     required: [host, service, status]
+  #     optional: [port, url, version, dependencies, certificates, container]
+  #   lifecycle:
+  #     applicable: true
+  #     property: status
+  #     values: [active, archived]
+  #     staleness: { active: 90d }
+
+# ─────────────────────────────────────────────────────────────
+# TOPICS — what the note is ABOUT. Tag-only.
+# ─────────────────────────────────────────────────────────────
+topics:
+  # Seeded from existing vault tags during Phase 1 seed.
+  # Claude will populate; review and edit.
+  []
+
+# ─────────────────────────────────────────────────────────────
+# PROPERTIES — vocabulary registry. Every frontmatter field
+# the vault recognizes, with its data type.
+# Content types reference these by name in required/optional.
+# ─────────────────────────────────────────────────────────────
+properties:
+  - name: status
+    type: enum
+    values: [active, archived, completed, someday, draft]
+    cardinality: single
+
+  - name: type
+    type: string
+    cardinality: single
+    description: Mirrors content_type id
+
+  - name: created
+    type: date
+    cardinality: single
+
+  - name: updated
+    type: date
+    cardinality: single
+
+  - name: metadata_review
+    type: enum
+    values: [pending]
+    cardinality: single
+
+  - name: metadata_review_note
+    type: string
+    cardinality: single
+
+  # Add as needed; start broad, specialize under pressure.
+
+# ─────────────────────────────────────────────────────────────
+# DEPRECATED — entries retired but kept for historical context.
+# Not accepted for new notes; flagged if detected.
+# ─────────────────────────────────────────────────────────────
+deprecated:
+  tags: []
+  properties: []

@@ -15,6 +15,7 @@
 ├── 📥 Inbox/          # Quick captures, unsorted notes
 ├── 📦 Archive/        # Completed or retired content
 ├── 🫥 Attachments/    # Images, PDFs, media files
+├── 🫥 Meta/           # Metadata framework: canonical list, audit logs
 ├── 🫥 Templates/      # Templater templates
 ├── Home.md            # Vault home page
 ├── Decision Rules.md  # Vault-specific conventions
@@ -25,6 +26,8 @@
 
 - See `.claude/Claude Context/vault-guide.md` for vault conventions
 - See `.claude/Claude Context/commit-message-guidelines.md` for commit format
+- See `.claude/Claude Context/metadata-philosophy.md` for the metadata framework (tagging, properties, classification)
+- Canonical metadata list: `🫥 Meta/vault-metadata.yaml`
 - Wiki-style links only: `[[Note Name]]`, `[[#Section]]`
 
 ## License
