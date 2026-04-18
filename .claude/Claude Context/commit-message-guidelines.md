@@ -22,5 +22,7 @@ This file defines project-specific commit types and scopes for Obsidian vault pr
 | **templates** | Templater templates |
 | **archive** | Archived content |
 | **config** | Vault configuration |
+| **metadata** | Metadata framework files, canonical list governance, audit log artifacts |
+| **skills** | Claude Skills under `.claude/skills/` |
 
 Or any domain-specific scope relevant to this vault.
