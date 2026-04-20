@@ -110,7 +110,7 @@ For each hop in sequence:
    - `post_apply_notes[]` preview (will be displayed after commit)
 2. **Approval gate.** Wait for explicit "yes." On anything else:
    - `no` / `abort` → exit. Vault is left at the last successful hop's version; already-applied hops stay committed.
-   - `stop here` → same as abort, but print *"Stopped at v<last-applied>. Re-run `/update-metadata-framework` to resume."*
+   - `stop here` → same as abort, but print *"Stopped at <last-applied>. Re-run `/update-metadata-framework` to resume."*
 3. **Apply each `file_changes[]` entry per its operation:**
    - `copy` / `overwrite` — copy the file from `<tempdir>/<path>` to `<vault>/<path>`. Create parent directories as needed. Record the vault path in the tracked-paths list.
    - `copy-if-missing` — if `<vault>/<path>` exists, skip. Otherwise copy from tempdir. Never overwrites an existing file.
@@ -171,7 +171,7 @@ Maintain a list of every vault file the Skill modifies or creates during each ho
 
 After the final hop commits successfully (or dry-run completes):
 
-- Summarize: *"Vault updated from v<start> → v<end>. <N> hop(s) applied, <M> commit(s) made."*
+- Summarize: *"Vault updated from <start> → <end>. <N> hop(s) applied, <M> commit(s) made."*
 - If any `diff-prompt` files were kept-local, list them with a note that they will diverge further on the next update.
 - If any schema-change reconciliation was deferred, remind: *"Run `/audit-metadata` soon to surface schema-driven findings."*
 - If `post_apply_notes[]` from the final hop suggested an audit, echo that suggestion.
