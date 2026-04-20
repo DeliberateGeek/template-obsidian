@@ -9,9 +9,20 @@ Human-readable history of every `template-obsidian` release that changes framewo
 - **Who writes here:** every release that modifies a framework-owned file (the allow-list installed into `🫥 Meta/`, `.claude/Claude Context/`, `.claude/scripts/`, and `.claude/skills/`). Release authors add an entry to this file *and* a per-hop YAML in `.migrations/` before tagging.
 - **Who reads here:** humans reviewing release history. The Skill reads the per-hop YAML, not this document.
 - **Scope:** framework-owned paths only. Template-vault content (`Home.md`, `README.md`, `📥 Inbox/`, etc.) is out of scope — those files land via `/onboard-vault-metadata-framework` and are not re-synced on update.
-- **Versioning:** semver tags on `main`. Registered vaults record their current tag in `🫥 Meta/.template-version`.
+- **Versioning:** semver tags on `main`. Registered vaults record their current version in `🫥 Meta/.template-version` (see § Version format below).
 - **Walking policy:** hops are applied in sequence, oldest first, with an approval gate between each. No skip-version YAMLs — the chain is authoritative.
-- **Bootstrap is not a migration.** `v1.0.0` has no `.migrations/*.yaml` file. A vault at `1.0.0` is the earliest state the Skill can start from; vaults with missing or stub `.template-version` are redirected to `/onboard-vault-metadata-framework` or `/init-vault-metadata-framework`.
+- **Bootstrap is not a migration.** `1.0.0` has no `.migrations/*.yaml` file. A vault at `1.0.0` is the earliest state the Skill can start from; vaults with missing or stub `.template-version` are redirected to `/onboard-vault-metadata-framework` or `/init-vault-metadata-framework`.
+
+### Version format
+
+Framework versions are **bare semver** — `1.0.0`, not `v1.0.0`. This follows the canonical semver spec (semver.org §11): the `v`-prefix is reserved for git tag names and does not appear in recorded or referenced versions.
+
+- `🫥 Meta/.template-version` contents: `1.0.0`
+- Migration file names: `.migrations/<from>-to-<to>.yaml` (e.g., `.migrations/1.0.0-to-1.1.0.yaml`)
+- Registry entries, error messages, and in-spec references: `1.0.0`
+- Git tags (only): `v1.0.0`
+
+When Skills call the GitHub tags API (which returns `v1.0.0`), they MUST strip the `v` prefix before recording or comparing the version. Skills MUST halt on a `v`-prefixed value in `.template-version` with a message directing the user to strip the prefix.
 
 ## Per-hop YAML schema
 
@@ -101,9 +112,9 @@ If a release needs an operation not listed here, add it to this table in the sam
 
 Entries are most-recent-first. Each entry mirrors the summary line of its per-hop YAML.
 
-### v1.0.0 — 2026-04-19
+### 1.0.0 — 2026-04-19
 
-**Initial release.** Establishes the framework-file baseline and the Phase 2 Skill set. No prior version to migrate from — vaults entering the update flow at `1.0.0` are at the earliest supported state.
+**Initial release** (git tag: `v1.0.0`). Establishes the framework-file baseline and the Phase 2 Skill set. No prior version to migrate from — vaults entering the update flow at `1.0.0` are at the earliest supported state.
 
 Framework Context files:
 
@@ -129,6 +140,6 @@ Vault metadata scaffolding:
 Registry files (template-repo only; not installed into vaults):
 
 - `MIGRATIONS.md` — this file.
-- `.migrations/` — per-hop YAML directory. Empty at v1.0.0 (bootstrap is not a migration).
+- `.migrations/` — per-hop YAML directory. Empty at `1.0.0` (bootstrap is not a migration).
 
 Because `1.0.0` is the bootstrap, there is no `.migrations/` entry for it. The next release will be the first hop file (e.g., `.migrations/1.0.0-to-1.1.0.yaml`).

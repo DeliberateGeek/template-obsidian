@@ -61,9 +61,13 @@ Run on entry, before any prompts or interviews. The result routes the rest of th
 
 1. **Framework not installed** — if `🫥 Meta/.template-version` is missing, or the file exists but contains the `.template` placeholder text (e.g., `ReplaceWith...`), halt:
    - *"Framework files are missing or incomplete. Long-standing vault? Run `/onboard-vault-metadata-framework`. New vault? Use `/new-workspace` with the template-obsidian template."*
-2. **Vault is not a git repo** — halt. Framework work requires git.
-3. **Stub `vault-metadata.yaml`** — if `🫥 Meta/vault-metadata.yaml` is missing OR its `vault.name` field equals `ReplaceWithVaultName` (the template stub value), route to **initialize mode**.
-4. **Real `vault-metadata.yaml`** — if the file exists with real content (`vault.name` is not the stub value):
+2. **Legacy `v`-prefixed version format** — if `.template-version` contents match `^v\d+\.\d+\.\d+$` (starts with `v`), halt:
+   - *"`.template-version` uses the legacy `v`-prefixed format (e.g., `v1.0.0`). Canonical form is bare semver (e.g., `1.0.0`); `v` is reserved for git tag names only. Edit the file to strip the leading `v`, commit the change (suggested message: `META(metadata): normalize .template-version to canonical bare-semver form`), then re-run this Skill."*
+3. **Invalid version format** — if `.template-version` contents are not the stub placeholder and do not match `^\d+\.\d+\.\d+$`, halt:
+   - *"`.template-version` is not valid bare semver. Expected form: `MAJOR.MINOR.PATCH` (e.g., `1.0.0`). Fix the file contents and re-run."*
+4. **Vault is not a git repo** — halt. Framework work requires git.
+5. **Stub `vault-metadata.yaml`** — if `🫥 Meta/vault-metadata.yaml` is missing OR its `vault.name` field equals `ReplaceWithVaultName` (the template stub value), route to **initialize mode**.
+6. **Real `vault-metadata.yaml`** — if the file exists with real content (`vault.name` is not the stub value):
    - If `--force-reinit` passed → route to **re-initialize mode**
    - Otherwise, prompt: *"Vault already has a real `vault-metadata.yaml`. Did you mean to invoke `/audit-metadata` (drift cleanup) or do you want to re-initialize (full restructure)?"* — abort cleanly on "audit" or "cancel"; on "re-init" confirmation, route to **re-initialize mode**.
 

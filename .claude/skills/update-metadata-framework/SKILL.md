@@ -54,13 +54,17 @@ Run on entry, before clone or interview.
 
 1. **Framework not installed** — if `🫥 Meta/.template-version` is missing, halt:
    - *"Framework files are missing. Long-standing vault? Run `/onboard-vault-metadata-framework`. New vault from template? Use `/new-workspace` with the `template-obsidian` template."*
-2. **Stub version** — if `.template-version` contains the `.template` placeholder text (starts with `ReplaceWith`) or does not parse as semver, halt:
+2. **Stub version** — if `.template-version` contains the `.template` placeholder text (starts with `ReplaceWith`), halt:
    - *"`.template-version` is a stub. Run `/init-vault-metadata-framework` to complete first-run setup before updating."*
-3. **Vault is not a git repo** — halt. Framework work requires git.
-4. **Resolve target** — if `--target-version` was passed, validate it is a semver string. Otherwise determine the latest tag from `DeliberateGeek/template-obsidian` (ls-remote against the repo; no checkout). Cache in a variable for the rest of the run.
-5. **Compare current vs target:**
-   - **Equal** → no-op. Print *"Vault is already at `template-obsidian` vX.Y.Z — nothing to do."* and exit.
-   - **Current newer than target** → halt. *"Vault is at vX.Y.Z; target vA.B.C is older. Downgrade is not supported."*
+3. **Legacy `v`-prefixed format** — if `.template-version` contents match `^v\d+\.\d+\.\d+$` (starts with `v`), halt:
+   - *"`.template-version` uses the legacy `v`-prefixed format (e.g., `v1.0.0`). Canonical form is bare semver (e.g., `1.0.0`); `v` is reserved for git tag names only. Edit the file to strip the leading `v`, commit the change (suggested message: `META(metadata): normalize .template-version to canonical bare-semver form`), then re-run this Skill."*
+4. **Invalid format** — if `.template-version` contents do not match `^\d+\.\d+\.\d+$`, halt:
+   - *"`.template-version` is not valid bare semver. Expected form: `MAJOR.MINOR.PATCH` (e.g., `1.0.0`). Fix the file contents and re-run."*
+5. **Vault is not a git repo** — halt. Framework work requires git.
+6. **Resolve target** — if `--target-version` was passed, validate it is bare semver (`^\d+\.\d+\.\d+$`). Otherwise determine the latest tag from `DeliberateGeek/template-obsidian` (ls-remote against the repo; no checkout) and **strip the leading `v`** before using or comparing. Cache the bare form in a variable for the rest of the run.
+7. **Compare current vs target:**
+   - **Equal** → no-op. Print *"Vault is already at `template-obsidian` X.Y.Z — nothing to do."* and exit.
+   - **Current newer than target** → halt. *"Vault is at X.Y.Z; target A.B.C is older. Downgrade is not supported."*
    - **Current older than target** → proceed to registry walk.
 
 ## Pre-flight checks
@@ -117,7 +121,7 @@ For each hop in sequence:
 5. **Update `.template-version`.** Overwrite `🫥 Meta/.template-version` with `<to_version>` (plain text, no newline sensitivity — match the existing format). Add to tracked paths.
 6. **Commit per hop.** Stage only the tracked paths (explicit — no `git add -A`). Commit message:
    - Type: `META(metadata)`
-   - Subject: `update framework from template-obsidian v<to_version>`
+   - Subject: `update framework from template-obsidian <to_version>`
    - Body: hop summary, list of files changed with their operations, any deferred schema-change notes. Attribution lines per global `commit-workflow-checklist.md`.
 7. **Approval gate on the commit message.** Present the proposed message and wait for explicit "yes" per global Rule 2. On approval, execute via Bash heredoc per global Rule 3. On rejection, offer revise / abort (changes stay staged) / reset (unstage, leave files in place).
 8. **Push prompt.** After the commit succeeds, prompt *"Push to origin? (y/n)."* Do not auto-push.
@@ -178,7 +182,7 @@ Mirrors the acceptance criteria from DeliberateGeek/template-obsidian#5.
 
 **Registry**
 
-- [ ] `MIGRATIONS.md` present at repo root with a `v1.0.0` retroactive entry.
+- [ ] `MIGRATIONS.md` present at repo root with a `1.0.0` retroactive entry.
 - [ ] `.migrations/` directory present.
 - [ ] Per-hop YAML schema documented (in `MIGRATIONS.md`).
 - [ ] Schema handles `copy` / `copy-if-missing` / `overwrite` / `diff-prompt` / `additive-merge` / `object-merge` operations.
