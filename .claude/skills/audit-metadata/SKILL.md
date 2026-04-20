@@ -63,7 +63,16 @@ Read these at start. If any is missing or malformed, halt with a specific error.
 Run in order. Abort on any failure with a clear message — do not attempt partial audits against a malformed vault.
 
 1. **Vault seeded** — `🫥 Meta/vault-metadata.yaml` exists and parses as YAML. If the file is still the raw `.template` copy (name starts with `ReplaceWithVaultName`), halt: *"Vault is not yet seeded. Run vault onboarding first."*
-2. **Schema match** — `vault-metadata.yaml` structurally conforms to `metadata-schema.yaml` (all required top-level keys, correct types on enum fields). On mismatch, halt with the first offending path and expected shape.
+2. **Schema match** — `vault-metadata.yaml` structurally conforms to `metadata-schema.yaml`. Invoke:
+
+   ```
+   pwsh.exe -File .claude/scripts/Invoke-MetadataValidate.ps1 -MetadataPath "🫥 Meta/vault-metadata.yaml"
+   ```
+
+   Interpret the exit code per `.claude/Claude Context/framework-scripts-reference.md`:
+   - **Exit 0** — schema conforms; proceed.
+   - **Exit 1** — structural findings present. Halt with the surfaced findings and guidance: *"Fix the schema violations above, then re-run `/audit-metadata`. If the violations are non-obvious, run `/init-vault-metadata-framework --force-reinit` to reconstruct a conformant canonical list."* Do not attempt a partial audit against a malformed canonical list.
+   - **Exit 2** — environment or framework problem. Halt with the surfaced message; do not treat as user-correctable.
 3. **Audit Logs directory** — `🫥 Meta/Audit Logs/` exists (created by template integration). If absent, halt: *"Audit Logs directory missing. Verify template was applied correctly."*
 4. **Vault git state** — run `git status --porcelain` at the vault root.
    - **Clean** → proceed.

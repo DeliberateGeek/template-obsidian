@@ -80,7 +80,7 @@ Run after mode detection, before any interview or write.
 1. **Vault git state** — run `git status --porcelain` at vault root.
    - **Clean** → proceed.
    - **Dirty** → prompt: `(a)` stash and pop at end, `(b)` separate pre-init commit first, `(c)` abort, `(d)` proceed with dirty state (user reconciles).
-2. **Framework files present per allow-list** — confirm every framework-owned file expected at the recorded `.template-version` exists (`metadata-philosophy.md`, `metadata-schema.yaml`, `metadata-examples.md`, the three PowerShell scripts, `🫥 Meta/Audit Logs/`). If any is missing, halt: *"Framework incomplete. Run `/onboard-vault-metadata-framework --force-reinstall` to repair, or investigate manually."*
+2. **Framework files present per allow-list** — confirm every framework-owned file expected at the recorded `.template-version` exists (`metadata-philosophy.md`, `metadata-schema.yaml`, `metadata-examples.md`, `framework-scripts-reference.md`, the four PowerShell scripts — `Invoke-MetadataNormalize.ps1`, `Invoke-MetadataValidate.ps1`, `Remove-MetadataAuditLogs.ps1`, `Set-MetadataDefer.ps1` — and `🫥 Meta/Audit Logs/`). If any is missing, halt: *"Framework incomplete. Run `/onboard-vault-metadata-framework --force-reinstall` to repair, or investigate manually."*
 
 ## Content scan
 
@@ -166,7 +166,18 @@ After interview completes in any mode:
 
 1. Serialize the draft to `🫥 Meta/vault-metadata.yaml`, overwriting the stub or prior file.
 2. Include **inline comments** explaining each content type, topic cluster, and property choice — each comment cites the philosophy rule that grounded the decision. Comments are durable guidance for future edits.
-3. Validate the draft against `metadata-schema.yaml`. On any structural violation, surface the mismatch, offer the user a chance to revise, or abort without writing.
+3. Validate the draft against `metadata-schema.yaml` by invoking:
+
+   ```
+   pwsh.exe -File .claude/scripts/Invoke-MetadataValidate.ps1 -MetadataPath "🫥 Meta/vault-metadata.yaml"
+   ```
+
+   Interpret the exit code per `.claude/Claude Context/framework-scripts-reference.md`:
+   - **Exit 0** — zero findings, proceed to the findings report step.
+   - **Exit 1** — structural findings present. Surface the script's stdout to the user and offer: revise the draft in place and re-validate, or abort without writing a findings report or committing.
+   - **Exit 2** — environment or framework problem (e.g., `powershell-yaml` not installed, schema file missing). Halt with the surfaced message; do not treat as user-correctable. Point the user to `framework-scripts-reference.md` § Prerequisites.
+
+   Do not write a draft that fails validation. Do not proceed to commit until the validator exits 0.
 4. If the scan surfaced findings (property-naming variants, proper-noun-as-tag candidates, malformed tags, deprecation candidates), write a findings report to:
 
    ```

@@ -1,0 +1,72 @@
+# Test fixture — invalid vault-metadata.yaml
+# Used by Invoke-MetadataValidate.ps1 smoke tests.
+# Running the validator against this file MUST produce exit 1 with
+# multiple findings across different check categories.
+#
+# NOTE: This file is template-maintainer infrastructure.
+# It is excluded from consumer vaults via WorkspaceToolkit's
+# templateOnlyPaths mechanism (manifests/obsidian.json).
+#
+# Deliberate violations (one per category where feasible):
+#   - vault.name is empty                              (non-empty string check)
+#   - vault.promotion_threshold is not an int          (type check)
+#   - content_types[0].id has uppercase letters        (kebab-case check)
+#   - content_types[0].lifecycle.applicable=true but   (required_if check)
+#     lifecycle.values is missing
+#   - content_types[1] references a required property  (cross-reference check)
+#     "nonexistent" not in properties registry
+#   - topics[0].id contains underscore                 (kebab-case check)
+#   - properties[0].type is not in the allowed enum    (enum check)
+#   - properties[1].type=enum but values is missing    (required_if check)
+#   - properties[1].cardinality is not in allowed enum (enum check)
+#   - deprecated section is missing the 'properties'   (structure check)
+#     key
+
+vault:
+  name: ""
+  description: Deliberately-broken fixture for negative-case regression testing
+  promotion_threshold: "eight"
+  retention:
+    audit_log_days: 90
+
+content_types:
+  - id: Reference_Doc
+    description: Uppercase + underscore id — violates kebab-case
+    folder: null
+    also_tag: true
+    properties:
+      required: [status]
+      optional: []
+    lifecycle:
+      applicable: true
+      property: status
+      # values missing — required_if applicable=true
+
+  - id: service-reference
+    description: Cross-reference violation — "nonexistent" is not a declared property
+    folder: null
+    also_tag: true
+    properties:
+      required: [nonexistent]
+      optional: []
+    lifecycle:
+      applicable: false
+
+topics:
+  - id: home_lab
+    aliases: []
+    deprecated: false
+
+properties:
+  - name: status
+    type: floatyboat
+    cardinality: single
+
+  - name: priority
+    type: enum
+    # values missing — required_if type=enum
+    cardinality: many
+
+deprecated:
+  tags: []
+  # properties key deliberately omitted

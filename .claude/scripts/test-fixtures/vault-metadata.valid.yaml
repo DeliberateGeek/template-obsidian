@@ -1,0 +1,68 @@
+# Test fixture — valid vault-metadata.yaml
+# Used by Invoke-MetadataValidate.ps1 smoke tests.
+# Running the validator against this file MUST produce exit 0 (zero findings).
+#
+# NOTE: This file is template-maintainer infrastructure.
+# It is excluded from consumer vaults via WorkspaceToolkit's
+# templateOnlyPaths mechanism (manifests/obsidian.json).
+
+vault:
+  name: TestFixtureVault
+  description: Minimal conformant vault-metadata for validator regression testing
+  promotion_threshold: 8
+  retention:
+    audit_log_days: 90
+
+content_types:
+  - id: reference
+    description: Reference docs, guides, cheat sheets
+    folder: null
+    also_tag: true
+    properties:
+      required: [status]
+      optional: []
+    lifecycle:
+      applicable: true
+      property: status
+      values: [active, archived]
+      staleness:
+        active: 90d
+
+  - id: lore
+    description: Campaign lore — static, not lifecycle-tracked
+    folder: null
+    also_tag: true
+    properties:
+      required: []
+      optional: []
+    lifecycle:
+      applicable: false
+
+topics:
+  - id: homelab
+    aliases: [home-lab, lab]
+    deprecated: false
+
+  - id: docker
+    aliases: [containers, docker-compose]
+    deprecated: false
+
+properties:
+  - name: status
+    type: enum
+    values: [active, archived]
+    cardinality: single
+    description: Lifecycle state for applicable content types
+
+  - name: created
+    type: date
+    cardinality: single
+
+  - name: host
+    type: link
+    cardinality: single
+    description: Wiki-link to the host note this reference documents
+
+deprecated:
+  tags: []
+  properties: []

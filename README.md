@@ -27,6 +27,7 @@
 - See `.claude/Claude Context/vault-guide.md` for vault conventions
 - See `.claude/Claude Context/commit-message-guidelines.md` for commit format
 - See `.claude/Claude Context/metadata-philosophy.md` for the metadata framework (tagging, properties, classification)
+- See `.claude/Claude Context/framework-scripts-reference.md` for framework-script prerequisites (e.g., `powershell-yaml` module) and exit-code conventions
 - Canonical metadata list: `🫥 Meta/vault-metadata.yaml`
 - Wiki-style links only: `[[Note Name]]`, `[[#Section]]`
 
