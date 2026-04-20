@@ -6,9 +6,9 @@ Human-readable history of every `template-obsidian` release that changes framewo
 
 ## Contract
 
-- **Who writes here:** every release that modifies a framework-owned file (the allow-list installed into `🫥 Meta/`, `.claude/Claude Context/`, `.claude/scripts/`, and `.claude/skills/`). Release authors add an entry to this file *and* a per-hop YAML in `.migrations/` before tagging.
+- **Who writes here:** every release on this repo. Release authors add an entry to this file *and* a per-hop YAML in `.migrations/` before tagging — even when no framework-owned files change (an empty-`file_changes[]` hop). This keeps template version and framework version in sync; walker halts on a missing hop rather than silently drifting.
 - **Who reads here:** humans reviewing release history. The Skill reads the per-hop YAML, not this document.
-- **Scope:** framework-owned paths only. Template-vault content (`Home.md`, `README.md`, `📥 Inbox/`, etc.) is out of scope — those files land via `/onboard-vault-metadata-framework` and are not re-synced on update.
+- **Scope of `file_changes[]`:** framework-owned paths only. Template-vault content (`Home.md`, `README.md`, `📥 Inbox/`, etc.) is out of scope — those files land via `/onboard-vault-metadata-framework` or `/new-workspace` and are not re-synced on update. A release that only changes template-vault content gets a registry entry with `file_changes: []`.
 - **Versioning:** semver tags on `main`. Registered vaults record their current version in `🫥 Meta/.template-version` (see § Version format below).
 - **Walking policy:** hops are applied in sequence, oldest first, with an approval gate between each. No skip-version YAMLs — the chain is authoritative.
 - **Bootstrap is not a migration.** `1.0.0` has no `.migrations/*.yaml` file. A vault at `1.0.0` is the earliest state the Skill can start from; vaults with missing or stub `.template-version` are redirected to `/onboard-vault-metadata-framework` or `/init-vault-metadata-framework`.
@@ -23,6 +23,40 @@ Framework versions are **bare semver** — `1.0.0`, not `v1.0.0`. This follows t
 - Git tags (only): `v1.0.0`
 
 When Skills call the GitHub tags API (which returns `v1.0.0`), they MUST strip the `v` prefix before recording or comparing the version. Skills MUST halt on a `v`-prefixed value in `.template-version` with a message directing the user to strip the prefix.
+
+## Release discipline
+
+Template version and framework version are kept in sync on this repo. Every git tag has a corresponding `MIGRATIONS.md` entry and `.migrations/<from>-to-<to>.yaml` file. Non-framework releases carry an empty `file_changes[]` hop. This produces a loud failure (walker halts on a missing hop) when discipline lapses, rather than silent drift between template state and recorded framework state.
+
+### What triggers a release
+
+A release is triggered by **closing an associated feature or standalone story** that was implemented in this repo. When such an issue closes, a tag-and-register cycle follows. Unreleased commits on `main` accumulate until the next story closes; multiple commits can land in a single release.
+
+In-progress work, bug fixes without an associated closed story, and untagged commits do NOT constitute a release.
+
+### Version classification
+
+Decide the version increment per standard semver:
+
+- **MAJOR** — breaking change to a framework file consumers depend on (e.g., removing a required field in `metadata-schema.yaml`, renaming an allow-listed path).
+- **MINOR** — additive framework capability (new optional field, new framework Skill, new canonical rule).
+- **PATCH** — framework bug fix, OR any non-framework change (template-vault content, `README`, `LICENSE`, `.editorconfig`, CI config).
+
+### Release checklist
+
+1. Merge the scope of work to `main`.
+2. Decide the new version per classification above.
+3. Add a `MIGRATIONS.md` entry under `## Release entries` with a one-line summary.
+4. Author `.migrations/<from>-to-<to>.yaml`. If the release touches no framework-owned paths, `file_changes: []` is correct — the hop is a version marker only.
+5. Commit both (`MIGRATIONS.md` + migration YAML) with `META(metadata): release <version>` or equivalent scope.
+6. Tag `v<version>` on `main` and push (`git tag -a v<version> -m "Release <version>"` + `git push origin v<version>`).
+
+### Recovery path
+
+If `/update-metadata-framework` halts with *"Migration registry is missing hop X-to-Y.yaml"*, release discipline lapsed between some prior tag and the next. Recovery:
+
+- Author the missing hop retroactively (likely `file_changes: []`) and cut a follow-up release that lands the hop file.
+- Alternatively, have affected users manually edit `.template-version` to a registered version and re-run the walker (destructive to provenance; prefer retroactive hop).
 
 ## Per-hop YAML schema
 
