@@ -86,6 +86,8 @@ Run in order. Abort on any failure with a clear message — do not attempt parti
 
 Run every section that is not explicitly skipped. **Empty sections — those with zero findings — are omitted from the final report.** This keeps the output signal-dense without compromising the invariant that every non-skipped section was actually evaluated.
 
+**Section ordering is load-bearing.** Sections run in numerical order, and later sections see the post-normalization state produced by earlier sections. In particular: Section 2 (fuzzy synonyms) re-evaluates the tag state *after* Section 1 has applied its auto-fixes. Running Section 1 in isolation (`--skip-fuzzy`) can therefore leave a note with a format-valid but still-unknown tag (e.g., `home_lab` → `home-lab`, which is valid kebab-case but not in the canonical topics list). In that scenario, the stranded tag waits for the next full audit run to surface as a fuzzy candidate against `homelab`.
+
 ### Section 1 — Canonical compliance
 
 **Scan:** Every tag appearing in any note's frontmatter (`tags: [...]`) and any inline `#tag` in body text.
@@ -101,6 +103,8 @@ Run every section that is not explicitly skipped. **Empty sections — those wit
 - Lowercase / kebab-case malformed → auto-fix in place; prompt for all other malformed tags.
 
 **Unknown tags** are never auto-normalized. Offer the user four dispositions per unknown tag: (a) add as new canonical topic, (b) add as alias to an existing topic, (c) delete from the note, (d) defer (stamps `metadata_review: pending`).
+
+**Worked example — format-fix producing a stranded unknown:** A note carries the tag `home_lab`. Section 1 classifies it as malformed (underscore) and auto-fixes to `home-lab`. `home-lab` is kebab-case-valid but does not appear as a canonical topic id or declared alias — so it is reclassified as unknown. Section 2 then computes fuzzy similarity and surfaces `home-lab` ↔ `homelab` as a candidate for user confirmation. The two-section pipeline resolves the tag; running only Section 1 would leave `home-lab` stranded until the next full audit.
 
 ### Section 2 — Fuzzy synonym candidates
 
@@ -166,6 +170,15 @@ Run every section that is not explicitly skipped. **Empty sections — those wit
 - **0 usages** → **retirement candidate** (surfaced as actionable)
 - **1 usage** → **low-adoption informational flag** (surfaced but not a recommendation; the user may prefer to preserve a rare-but-intentional tag)
 - **2+ usages** → not surfaced
+
+**Usage count includes:**
+- Direct frontmatter matches (`tags: [...]`) of the canonical id
+- Declared-alias matches in frontmatter (a note tagged with any entry from `topics[].aliases[]` is a usage of the parent canonical)
+- Inline body `#tag` matches, after tag-format normalization (e.g., `#IaC` in the body normalizes to `iac` and counts toward canonical `iac`)
+
+An alias or post-normalization body match IS a usage — counting it any other way would recommend retiring canonicals with active indirect traffic.
+
+**Worked example — alias and body-inline contributing to count:** Canonical topic `docker` has declared alias `containers`. Note `Frigate NVR.md` carries `tags: [containers]` and nothing else that would match. Canonical topic `iac` has no aliases. Note `Terraform Study Plan.md` has `#IaC` inline in the body and no frontmatter tags matching. Both `docker` and `iac` have zero direct frontmatter matches of their canonical id, but each has one indirect match (alias, body-inline respectively). Both count as **1 usage** — low-adoption flag, not retirement candidate.
 
 **Retirement is count-based, not time-based.** A topic with a single active note is not a retirement candidate regardless of how old the note is.
 
