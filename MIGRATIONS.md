@@ -101,22 +101,34 @@ If a release needs an operation not listed here, add it to this table in the sam
 
 Entries are most-recent-first. Each entry mirrors the summary line of its per-hop YAML.
 
-### v1.0.0 — 2026-04-16
+### v1.0.0 — 2026-04-19
 
-**Initial release.** Establishes the framework-file baseline. No prior version to migrate from — vaults entering the update flow at `1.0.0` are at the earliest supported state.
+**Initial release.** Establishes the framework-file baseline and the Phase 2 Skill set. No prior version to migrate from — vaults entering the update flow at `1.0.0` are at the earliest supported state.
 
-Framework files shipped:
+Framework Context files:
 
 - `.claude/Claude Context/metadata-schema.yaml` — structural schema for `vault-metadata.yaml`.
 - `.claude/Claude Context/metadata-philosophy.md` — narrative design reference.
 - `.claude/Claude Context/metadata-examples.md` — worked classification examples.
 - `.claude/Claude Context/commit-message-guidelines.md` — vault-local commit conventions.
 - `.claude/Claude Context/vault-guide.md` — vault-level guidance.
-- `.claude/skills/audit-metadata/SKILL.md` — on-demand audit Skill (ships with the template so onboarded vaults inherit it).
-- `.claude/skills/init-vault-metadata-framework/SKILL.md` — first-run canonical-list authoring Skill.
+
+Framework Skills (ship with the template so onboarded vaults inherit them):
+
+- `.claude/skills/audit-metadata/SKILL.md` — on-demand full-vault audit.
+- `.claude/skills/init-vault-metadata-framework/SKILL.md` — first-run canonical-list authoring.
+- `.claude/skills/update-metadata-framework/SKILL.md` — version-sync walker for this registry.
+
+Vault metadata scaffolding:
+
 - `🫥 Meta/.template-version` — records `1.0.0`.
 - `🫥 Meta/vault-metadata.yaml.template` — stub consumed by `/init-vault-metadata-framework`.
 - `🫥 Meta/Canonical Metadata.md.template` — stub rendered view.
 - `🫥 Meta/Audit Logs/` — directory for daily audit logs (created at install; populated by the framework scripts and Skills).
 
-Because `1.0.0` is the bootstrap, there is no `.migrations/` entry for it. The next release (`1.1.0` or similar) will be the first hop file (`.migrations/1.0.0-to-1.1.0.yaml`).
+Registry files (template-repo only; not installed into vaults):
+
+- `MIGRATIONS.md` — this file.
+- `.migrations/` — per-hop YAML directory. Empty at v1.0.0 (bootstrap is not a migration).
+
+Because `1.0.0` is the bootstrap, there is no `.migrations/` entry for it. The next release will be the first hop file (e.g., `.migrations/1.0.0-to-1.1.0.yaml`).
