@@ -178,14 +178,32 @@ After interview completes in any mode:
    - **Exit 2** — environment or framework problem (e.g., `powershell-yaml` not installed, schema file missing). Halt with the surfaced message; do not treat as user-correctable. Point the user to `framework-scripts-reference.md` § Prerequisites.
 
    Do not write a draft that fails validation. Do not proceed to commit until the validator exits 0.
-4. If the scan surfaced findings (property-naming variants, proper-noun-as-tag candidates, malformed tags, deprecation candidates), write a findings report to:
+4. **Apply deferral dispositions.** Before writing the findings report, actually execute every deferral that the interview/scan produced. "Deferred" in the findings report means an action was taken — never descriptive-only.
+
+   For each deferred finding, invoke `.claude/scripts/Set-MetadataDefer.ps1` to stamp `metadata_review: pending` on the affected notes:
+
+   ```
+   pwsh.exe -File .claude/scripts/Set-MetadataDefer.ps1 -Notes "path1.md,path2.md" -Reason "short description of the deferral"
+   ```
+
+   **Batching rule:** group notes by shared deferral reason to minimize script calls. One invocation per distinct `-Reason` string.
+
+   **Reason wording:** use a short, actionable description that future-audit readers can act on — e.g.:
+   - `unknown property 'date-created'; rename to canonical at next audit`
+   - `proper-noun tag 'Proxmox'; classify as property at next audit`
+   - `unclassified note; assign content-type tag at next audit`
+
+   **On script failure (non-zero exit):** record the failure against the affected notes in the pending findings report — e.g., *"Deferral stamp FAILED for `<path>`: `<stderr>` — surface manually at next audit"* — and continue processing other deferrals. Do not halt the run. Surface the collected failures to the user and require acknowledgement before proceeding to commit.
+
+   Track every note file that received a successful deferral stamp — this list feeds the commit workflow's tracked-paths list below.
+5. If the scan surfaced findings (property-naming variants, proper-noun-as-tag candidates, malformed tags, deprecation candidates), write a findings report to:
 
    ```
    🫥 Meta/Audit Logs/findings-init-YYYY-MM-DD-HHMMSS.md
    ```
 
-   Filename format matches `/audit-metadata`'s datetime convention. Report includes: mode used, scan statistics, each finding category with dispositions (what was applied, what was deferred), and grounding citations.
-5. Brand-new mode produces **no findings report** — nothing was scanned.
+   Filename format matches `/audit-metadata`'s datetime convention. Report includes: mode used, scan statistics, each finding category with dispositions (what was applied, what was deferred with stamp-applied-at-HH:MM:SS evidence, what failed to stamp), and grounding citations.
+6. Brand-new mode produces **no findings report** — nothing was scanned and no deferrals were applied.
 
 ## Commit workflow
 
@@ -194,6 +212,8 @@ Follow the global commit-workflow-checklist — meta-Skill discipline: propose �
 **Tracked paths** (explicit, no `git add -A`):
 - `🫥 Meta/vault-metadata.yaml` (always)
 - `🫥 Meta/Audit Logs/findings-init-YYYY-MM-DD-HHMMSS.md` (when scan produced findings)
+- `🫥 Meta/Audit Logs/YYYY-MM-DD.md` (when any deferral was stamped — `Set-MetadataDefer.ps1` appends to the daily rotation file)
+- Each note file that received a deferral stamp (explicit paths from the deferral tracking list in the Write-draft step)
 
 **Commit message:**
 - Initialize mode: `META(metadata): initialize vault-metadata`
@@ -246,6 +266,8 @@ Mirrors the acceptance criteria from DeliberateGeek/WorkspaceToolkit#106.
 - [ ] Every proposal in any mode cites grounding in `metadata-philosophy.md`
 - [ ] User approval gate honored for every commit (global checklist Step 2 → 3a)
 - [ ] Findings report written to `🫥 Meta/Audit Logs/findings-init-<stamp>.md` when scan produced findings
+- [ ] Deferral dispositions in the findings report are applied to affected note frontmatter via `Set-MetadataDefer.ps1` before the findings report is written (not descriptive-only)
+- [ ] Daily audit log (`🫥 Meta/Audit Logs/YYYY-MM-DD.md`) captures an entry per deferral stamp
 - [ ] Skill halts with clear guidance when framework files are missing
 
 End-to-end verification against fresh clones and a throwaway vault is scope for template-obsidian#6, not this story.
