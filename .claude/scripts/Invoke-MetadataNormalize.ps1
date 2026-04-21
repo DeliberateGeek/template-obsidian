@@ -66,9 +66,15 @@ Begin {
     $ErrorActionPreference = 'Stop'
 
     # --- Parse note paths ---
-    $script:notePaths = $Notes -split ',' |
-        ForEach-Object { $_.Trim() } |
-        Where-Object { $_ -ne '' }
+    # Force array context — a single-element pipeline result would otherwise
+    # collapse to a scalar string, and `$script:notePaths[0]` would index
+    # the first character instead of the first path. That misrouted
+    # Resolve-VaultRoot to cwd-adjacent `.obsidian/` folders.
+    $script:notePaths = @(
+        $Notes -split ',' |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -ne '' }
+    )
     $script:totalNormalized = 0
 
     # =========================================================================
@@ -230,6 +236,138 @@ Begin {
         }
     }
 
+    function Get-TagsRegion {
+        # Locates the `tags:` region within a frontmatter text block. Returns
+        # $null if no top-level tags key exists. Otherwise returns:
+        #   Shape   = 'Inline' | 'Block' | 'Scalar' | 'Empty'
+        #   Tags    = string[]  (parsed tag values; empty for Empty shape)
+        #   Start   = int       (character index of line start in $Frontmatter)
+        #   Length  = int       (characters to remove, including trailing \n)
+        param(
+            [Parameter(Mandatory)]
+            [string]$Frontmatter
+        )
+
+        # Match a top-level `tags:` line (no leading whitespace)
+        $lineMatch = [regex]::Match($Frontmatter, '(?m)^tags\s*:[ \t]*(?<tail>.*?)(?:\r?\n|\z)')
+        if (-not $lineMatch.Success) { return $null }
+
+        $lineStart = $lineMatch.Index
+        $lineEnd = $lineStart + $lineMatch.Length
+        $tail = $lineMatch.Groups['tail'].Value.Trim()
+
+        # Inline array
+        if ($tail -match '^\[(?<inner>.*)\]\s*$') {
+            $inner = $Matches['inner'].Trim()
+            $tags = if ($inner -eq '') {
+                @()
+            }
+            else {
+                $inner -split ',' | ForEach-Object { $_.Trim().Trim('"',"'") } | Where-Object { $_ -ne '' }
+            }
+            $shape = if ($tags.Count -eq 0) { 'Empty' } else { 'Inline' }
+            return @{
+                Shape  = $shape
+                Tags   = [string[]]$tags
+                Start  = $lineStart
+                Length = $lineEnd - $lineStart
+            }
+        }
+
+        # Block list: consume following `  - value` lines
+        if ($tail -eq '') {
+            $tags = [System.Collections.Generic.List[string]]::new()
+            $cursor = $lineEnd
+            $len = $Frontmatter.Length
+            while ($cursor -lt $len) {
+                $nextNewline = $Frontmatter.IndexOf("`n", $cursor)
+                if ($nextNewline -lt 0) { $nextNewline = $len - 1 }
+                $line = $Frontmatter.Substring($cursor, $nextNewline - $cursor + 1)
+                $trimmed = $line.TrimEnd("`r","`n")
+                if ($trimmed -match '^\s+-\s+(?<val>.+?)\s*$') {
+                    $tags.Add($Matches['val'].Trim('"',"'"))
+                    $cursor = $nextNewline + 1
+                    continue
+                }
+                if ($trimmed -match '^\s*$') {
+                    # Blank line ends the block
+                    break
+                }
+                # Next top-level key or non-continuation content
+                break
+            }
+            $shape = if ($tags.Count -eq 0) { 'Empty' } else { 'Block' }
+            return @{
+                Shape  = $shape
+                Tags   = [string[]]$tags
+                Start  = $lineStart
+                Length = $cursor - $lineStart
+            }
+        }
+
+        # Scalar form: tags: single-value
+        return @{
+            Shape  = 'Scalar'
+            Tags   = [string[]]@($tail.Trim('"',"'"))
+            Start  = $lineStart
+            Length = $lineEnd - $lineStart
+        }
+    }
+
+    function Resolve-NormalizedTagSet {
+        # Given input tags and an alias map, produces an ordered, deduped
+        # result preserving first-seen order. Reports which substitutions
+        # and collisions occurred.
+        param(
+            [Parameter(Mandatory)]
+            [AllowEmptyCollection()]
+            [string[]]$Tags,
+
+            [Parameter(Mandatory)]
+            [hashtable]$AliasMap
+        )
+
+        $result = [System.Collections.Generic.List[string]]::new()
+        $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        $substitutions = [System.Collections.Generic.List[pscustomobject]]::new()
+        $collisions = [System.Collections.Generic.List[pscustomobject]]::new()
+
+        foreach ($tag in $Tags) {
+            if ($AliasMap.ContainsKey($tag)) {
+                $canonical = [string]$AliasMap[$tag]
+                if ($seen.Contains($canonical)) {
+                    $collisions.Add([pscustomobject]@{ Alias = $tag; Canonical = $canonical })
+                    continue
+                }
+                $substitutions.Add([pscustomobject]@{ Alias = $tag; Canonical = $canonical })
+                [void]$seen.Add($canonical)
+                $result.Add($canonical)
+            }
+            else {
+                if ($seen.Contains($tag)) { continue }
+                [void]$seen.Add($tag)
+                $result.Add($tag)
+            }
+        }
+
+        return [pscustomobject]@{
+            Tags          = [string[]]$result
+            Substitutions = $substitutions
+            Collisions    = $collisions
+        }
+    }
+
+    function ConvertTo-InlineTagsLine {
+        param(
+            [Parameter(Mandatory)]
+            [AllowEmptyCollection()]
+            [string[]]$Tags
+        )
+
+        if ($Tags.Count -eq 0) { return 'tags: []' }
+        return 'tags: [' + ($Tags -join ', ') + ']'
+    }
+
     function Invoke-NormalizeNote {
         param(
             [Parameter(Mandatory)]
@@ -252,58 +390,53 @@ Begin {
             return
         }
 
-        # Extract tags from frontmatter (handles both YAML list and inline formats)
         $frontmatter = $parsed.Frontmatter
-        $changed = $false
+        $region = Get-TagsRegion -Frontmatter $frontmatter
+
+        if (-not $region) { return }
+        if ($region.Tags.Count -eq 0) { return }
+
+        # Gate: only touch notes where at least one tag is a declared alias.
+        # Notes with block-shape tags but no alias drift stay block-shape —
+        # shape sweeping is out of scope (see template-obsidian#24).
+        $hasAlias = $false
+        foreach ($t in $region.Tags) {
+            if ($AliasMap.ContainsKey($t)) { $hasAlias = $true; break }
+        }
+        if (-not $hasAlias) { return }
+
+        $resolved = Resolve-NormalizedTagSet -Tags $region.Tags -AliasMap $AliasMap
+
+        # Collisions resolved via dedupe are logged as NORMALIZE+DEDUPE.
+        # Pure substitutions are logged as NORMALIZE.
         $normalizations = [System.Collections.Generic.List[string]]::new()
-
-        foreach ($alias in $AliasMap.Keys) {
-            $canonical = $AliasMap[$alias]
-
-            # Each pattern pairs with a replacement string keyed to its capture
-            # shape. The block-list pattern has two capture groups (leading
-            # whitespace + trailing whitespace); the inline-array pattern uses
-            # lookaround assertions and has no capture groups. Using a shared
-            # replacement string like "`${1}$canonical`${2}" against the inline
-            # pattern would leak literal ${1}/${2} into the output because
-            # those backreferences do not resolve. See TO#18 for the bug that
-            # motivated the split.
-            $tagPatternReplacements = @(
-                @{
-                    Pattern     = "(?m)^(\s*-\s+)$([regex]::Escape($alias))(\s*)$"
-                    Replacement = "`${1}$canonical`${2}"
-                },
-                @{
-                    Pattern     = "(?<=\btags:\s*\[.*?)$([regex]::Escape($alias))(?=.*?\])"
-                    Replacement = $canonical
-                }
-            )
-
-            foreach ($entry in $tagPatternReplacements) {
-                if ($frontmatter -match $entry.Pattern) {
-                    $frontmatter = $frontmatter -replace $entry.Pattern, $entry.Replacement
-                    $changed = $true
-                    $normalizations.Add("$alias -> $canonical")
-                }
-            }
+        foreach ($s in $resolved.Substitutions) {
+            $normalizations.Add("$($s.Alias) -> $($s.Canonical)")
+        }
+        foreach ($c in $resolved.Collisions) {
+            $normalizations.Add("$($c.Alias) -> $($c.Canonical) [deduped]")
         }
 
-        if (-not $changed) {
-            return
-        }
+        if ($normalizations.Count -eq 0) { return }
+
+        $newTagsLine = (ConvertTo-InlineTagsLine -Tags $resolved.Tags) + "`n"
+        $newFrontmatter = $frontmatter.Substring(0, $region.Start) + $newTagsLine + $frontmatter.Substring($region.Start + $region.Length)
 
         $relativePath = $Path.Replace($VaultRoot, '').TrimStart('\', '/')
         $normalizationList = $normalizations -join ', '
 
         if ($PSCmdlet.ShouldProcess($relativePath, "Normalize tags: $normalizationList")) {
-            $newContent = "---`n$frontmatter---`n$($parsed.Body)"
+            $newContent = "---`n$newFrontmatter---`n$($parsed.Body)"
             Set-Content -Path $Path -Value $newContent -NoNewline -Encoding utf8NoBOM
 
-            foreach ($normalization in $normalizations) {
-                Write-AuditEntry -LogDir $AuditLogDir -Message "NORMALIZE: ``$relativePath`` tag $normalization"
+            foreach ($s in $resolved.Substitutions) {
+                Write-AuditEntry -LogDir $AuditLogDir -Message "NORMALIZE: ``$relativePath`` tag $($s.Alias) -> $($s.Canonical)"
+            }
+            foreach ($c in $resolved.Collisions) {
+                Write-AuditEntry -LogDir $AuditLogDir -Message "NORMALIZE+DEDUPE: ``$relativePath`` tag $($c.Alias) -> $($c.Canonical) (canonical already present)"
             }
 
-            $script:totalNormalized += $normalizations.Count
+            $script:totalNormalized += $resolved.Substitutions.Count + $resolved.Collisions.Count
         }
     }
 }

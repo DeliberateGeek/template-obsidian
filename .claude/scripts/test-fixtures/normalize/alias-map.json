@@ -1,0 +1,5 @@
+{
+  "home-assistant": "automation",
+  "k8s": "kubernetes",
+  "docker-compose": "docker"
+}
