@@ -25,6 +25,7 @@ $scriptUnderTest = Join-Path $PSScriptRoot 'Invoke-MetadataNormalize.ps1'
 $fixtureRoot     = Join-Path $PSScriptRoot 'test-fixtures/normalize'
 $inputsDir       = Join-Path $fixtureRoot 'inputs'
 $expectedDir     = Join-Path $fixtureRoot 'expected'
+$expectedLogDir  = Join-Path $fixtureRoot 'expected-log'
 $aliasMap        = Join-Path $fixtureRoot 'alias-map.json'
 
 if (-not (Test-Path $scriptUnderTest)) { throw "Script under test not found: $scriptUnderTest" }
@@ -69,16 +70,61 @@ foreach ($scenario in $scenarios) {
     $actualText   = $actualText.TrimEnd("`n")
     $expectedText = $expectedText.TrimEnd("`n")
 
-    if ($actualText -eq $expectedText) {
+    $contentOk = ($actualText -eq $expectedText)
+
+    # Optional audit-log assertion. If a sidecar exists at
+    # expected-log/<scenario>.log, each non-empty line is matched as a
+    # substring against the scratch vault's audit log for today. This
+    # verifies log categorization (NORMALIZE vs NORMALIZE+DEDUPE), which
+    # the content diff above cannot catch.
+    $logOk = $true
+    $logDetails = $null
+    $expectedLogPath = Join-Path $expectedLogDir ("$name.log")
+    if (Test-Path $expectedLogPath) {
+        $auditLogDir = Join-Path $scratchRoot 'Meta/Audit Logs'
+        $auditEntries = ''
+        if (Test-Path $auditLogDir) {
+            $logFiles = Get-ChildItem -Path $auditLogDir -Filter '*.md' -ErrorAction SilentlyContinue
+            foreach ($lf in $logFiles) {
+                $auditEntries += (Get-Content -Path $lf.FullName -Raw -Encoding utf8) + "`n"
+            }
+        }
+        $expectedLines = Get-Content -Path $expectedLogPath -Encoding utf8 |
+            Where-Object { $_ -ne '' -and -not $_.StartsWith('#') }
+        $missing = @()
+        foreach ($line in $expectedLines) {
+            if ($auditEntries -notmatch [regex]::Escape($line)) { $missing += $line }
+        }
+        if ($missing.Count -gt 0) {
+            $logOk = $false
+            $logDetails = "missing log substrings:`n" + (($missing | ForEach-Object { "       $_" }) -join "`n")
+        }
+    }
+
+    if ($contentOk -and $logOk) {
         Write-Host "  ✅ $name" -ForegroundColor Green
     }
     else {
         Write-Host "  🚨 $name" -ForegroundColor Red
-        $failures.Add("[$name] output does not match expected")
-        Write-Host "     --- expected ---" -ForegroundColor DarkGray
-        $expectedText -split "`n" | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
-        Write-Host "     --- actual ---" -ForegroundColor DarkGray
-        $actualText -split "`n" | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+        if (-not $contentOk) {
+            $failures.Add("[$name] output does not match expected")
+            Write-Host "     --- expected ---" -ForegroundColor DarkGray
+            $expectedText -split "`n" | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+            Write-Host "     --- actual ---" -ForegroundColor DarkGray
+            $actualText -split "`n" | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+        }
+        if (-not $logOk) {
+            $failures.Add("[$name] audit log does not contain expected entries")
+            Write-Host "     $logDetails" -ForegroundColor DarkGray
+        }
+    }
+
+    # Clear audit log between scenarios so per-scenario assertions don't
+    # see entries from prior runs.
+    $auditLogDir = Join-Path $scratchRoot 'Meta/Audit Logs'
+    if (Test-Path $auditLogDir) {
+        Get-ChildItem -Path $auditLogDir -Filter '*.md' -ErrorAction SilentlyContinue |
+            Remove-Item -Force -ErrorAction SilentlyContinue
     }
 }
 

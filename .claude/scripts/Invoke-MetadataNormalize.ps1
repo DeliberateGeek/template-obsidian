@@ -332,11 +332,26 @@ Begin {
         $substitutions = [System.Collections.Generic.List[pscustomobject]]::new()
         $collisions = [System.Collections.Generic.List[pscustomobject]]::new()
 
+        # Pre-compute the set of literal (non-alias) tags present in the
+        # input. An alias -> canonical substitution where the canonical also
+        # appears literally in the input is a collision regardless of order,
+        # so the audit log categorizes it as NORMALIZE+DEDUPE even when the
+        # alias is encountered before the canonical.
+        $literalTags = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($t in $Tags) {
+            if (-not $AliasMap.ContainsKey($t)) { [void]$literalTags.Add($t) }
+        }
+
         foreach ($tag in $Tags) {
             if ($AliasMap.ContainsKey($tag)) {
                 $canonical = [string]$AliasMap[$tag]
-                if ($seen.Contains($canonical)) {
+                $isCollision = $seen.Contains($canonical) -or $literalTags.Contains($canonical)
+                if ($isCollision) {
                     $collisions.Add([pscustomobject]@{ Alias = $tag; Canonical = $canonical })
+                    if (-not $seen.Contains($canonical)) {
+                        [void]$seen.Add($canonical)
+                        $result.Add($canonical)
+                    }
                     continue
                 }
                 $substitutions.Add([pscustomobject]@{ Alias = $tag; Canonical = $canonical })

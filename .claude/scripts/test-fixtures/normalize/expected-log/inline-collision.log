@@ -1,0 +1,4 @@
+# Alias encountered before canonical in input.
+# Expected: log categorizes as NORMALIZE+DEDUPE (canonical was also present).
+# Regression guard for the log-fidelity fix after TO#6 Finding 1-1 re-verification.
+NORMALIZE+DEDUPE: `inline-collision.md` tag home-assistant -> automation (canonical already present)
