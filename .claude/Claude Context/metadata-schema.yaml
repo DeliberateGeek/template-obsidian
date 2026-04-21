@@ -235,6 +235,17 @@ tag_format_rules:
       auto_fix: false
       enforcement: Reject and prompt for correction
 
+    - id: inline-array-shape
+      description: >
+        Note frontmatter must serialize tags as a single-line inline array
+        (`tags: [a, b, c]`), not as a YAML block list (`tags:\n  - a\n  - b`)
+        or a bare scalar. Rule governs the container shape, not individual
+        tag values. Scripts that rewrite frontmatter tags (e.g.,
+        Invoke-MetadataNormalize.ps1) must emit inline shape; Claude
+        auto-fixes at capture.
+      auto_fix: true
+      enforcement: Script auto-fix at audit; Claude auto-fix at capture
+
   soft_flag:
     - id: no-punctuation
       description: No punctuation other than hyphen (bans "/" — hierarchical tags rejected)

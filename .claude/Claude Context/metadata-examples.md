@@ -6,6 +6,20 @@ These examples train classification judgment. When you encounter a new note, fin
 
 ---
 
+## Frontmatter shape
+
+Tags serialize as a single-line inline array:
+
+```yaml
+---
+tags: [reference, homelab, sso, docker]
+---
+```
+
+Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical rule lives in `metadata-schema.yaml → tag_format_rules.hard_fail.inline-array-shape`; scripts that rewrite frontmatter tags (e.g., `Invoke-MetadataNormalize.ps1`) emit inline shape and Claude auto-fixes at capture. The examples below describe tags narratively for readability; actual frontmatter always uses the inline form shown above.
+
+---
+
 ## Example 1 — Service operational reference
 
 **Scenario:** A note documenting how Authentik SSO is deployed, configured, and operated on a specific host.
