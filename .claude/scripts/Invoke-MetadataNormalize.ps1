@@ -260,16 +260,28 @@ Begin {
         foreach ($alias in $AliasMap.Keys) {
             $canonical = $AliasMap[$alias]
 
-            # Match tag in YAML list format: "  - alias" or inline format: "[alias, other]"
-            # Also match in tags: field with various formats
-            $tagPatterns = @(
-                "(?m)^(\s*-\s+)$([regex]::Escape($alias))(\s*)$"
-                "(?<=\btags:\s*\[.*?)$([regex]::Escape($alias))(?=.*?\])"
+            # Each pattern pairs with a replacement string keyed to its capture
+            # shape. The block-list pattern has two capture groups (leading
+            # whitespace + trailing whitespace); the inline-array pattern uses
+            # lookaround assertions and has no capture groups. Using a shared
+            # replacement string like "`${1}$canonical`${2}" against the inline
+            # pattern would leak literal ${1}/${2} into the output because
+            # those backreferences do not resolve. See TO#18 for the bug that
+            # motivated the split.
+            $tagPatternReplacements = @(
+                @{
+                    Pattern     = "(?m)^(\s*-\s+)$([regex]::Escape($alias))(\s*)$"
+                    Replacement = "`${1}$canonical`${2}"
+                },
+                @{
+                    Pattern     = "(?<=\btags:\s*\[.*?)$([regex]::Escape($alias))(?=.*?\])"
+                    Replacement = $canonical
+                }
             )
 
-            foreach ($pattern in $tagPatterns) {
-                if ($frontmatter -match $pattern) {
-                    $frontmatter = $frontmatter -replace $pattern, "`${1}$canonical`${2}"
+            foreach ($entry in $tagPatternReplacements) {
+                if ($frontmatter -match $entry.Pattern) {
+                    $frontmatter = $frontmatter -replace $entry.Pattern, $entry.Replacement
                     $changed = $true
                     $normalizations.Add("$alias -> $canonical")
                 }
