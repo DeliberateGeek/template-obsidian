@@ -28,6 +28,22 @@ When Skills call the GitHub tags API (which returns `v1.0.0`), they MUST strip t
 
 Template version and framework version are kept in sync on this repo. Every git tag has a corresponding `MIGRATIONS.md` entry and `.migrations/<from>-to-<to>.yaml` file. Non-framework releases carry an empty `file_changes[]` hop. This produces a loud failure (walker halts on a missing hop) when discipline lapses, rather than silent drift between template state and recorded framework state.
 
+### Tags are immutable; every change requires at minimum a patch bump
+
+Once a git tag is pushed, it is never moved. Every subsequent change — framework bug fix, doc edit, CI tweak, anything — lands on `main` and gets a new version tag (at minimum a patch bump, per the classification below). A tag force-move does not propagate script changes to vaults that already onboarded at that tag (the walker is version-based; a same-version move has no hop to traverse), so moving tags silently diverges upstream from consumer state. This rule prevents that class of drift.
+
+This replaces the prior "stay on v1.0.0 until the metadata-framework epic closes" convention, which used tag moves for incremental fixes and surfaced the propagation gap documented in DeliberateGeek/template-obsidian#20.
+
+### Testing without version proliferation
+
+Iterative testing (fix → test → typo → fix → test again) must not consume version numbers. The contract:
+
+- **Test harnesses operate on branches or SHAs**, never on tags. A tag is the terminal artifact of a verified, landed change.
+- **Tag only when the fix is verified end-to-end** and ready to ship. Accumulate iteration commits on a branch; tag the final merged commit.
+- **Vault onboarding / update flows** (`/onboard-vault-metadata-framework`, `/update-metadata-framework`) should accept a branch or SHA as an override source for testing, but default to tags for real onboarding.
+
+This keeps version numbers as a signal of "a verified change shipped," not "the author pressed save."
+
 ### What triggers a release
 
 A release is triggered by **closing an associated feature or standalone story** that was implemented in this repo. When such an issue closes, a tag-and-register cycle follows. Unreleased commits on `main` accumulate until the next story closes; multiple commits can land in a single release.
