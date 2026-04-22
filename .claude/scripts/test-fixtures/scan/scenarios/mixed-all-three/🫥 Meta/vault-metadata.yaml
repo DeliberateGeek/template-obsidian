@@ -2,8 +2,6 @@ vault:
   name: TestScanVault
   description: Fixture
   promotion_threshold: 8
-  retention:
-    audit_log_days: 90
 
 content_types:
   - id: reference

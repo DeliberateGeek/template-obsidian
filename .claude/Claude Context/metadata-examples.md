@@ -343,12 +343,10 @@ Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical ru
 - Tag format rules (lowercase, kebab-case, etc.)
 - Capture-and-check flow
 - Validation layers
-- Findings-report location (`🫥 Meta/Audit Logs/`)
 
 **Per-vault (varies):**
 - Which content types exist and their lifecycle settings
 - Which topics are canonical and their aliases
 - Which properties are recognized
 - Promotion threshold
-- Audit log retention period
 - Specific folder structure beyond the standard set

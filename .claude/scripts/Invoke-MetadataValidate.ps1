@@ -278,14 +278,6 @@ See .claude/Claude Context/framework-scripts-reference.md for details.
             Add-Finding -Findings $Findings -Section 'vault' -Path 'vault.promotion_threshold' `
                 -Message "Must be an integer; got '$($vault['promotion_threshold'])' ($($vault['promotion_threshold'].GetType().Name))."
         }
-
-        if ($vault.ContainsKey('retention') -and $vault['retention']) {
-            $retention = $vault['retention']
-            if ($retention.ContainsKey('audit_log_days') -and -not (Test-IsInt -Value $retention['audit_log_days'])) {
-                Add-Finding -Findings $Findings -Section 'vault' -Path 'vault.retention.audit_log_days' `
-                    -Message "Must be an integer; got '$($retention['audit_log_days'])'."
-            }
-        }
     }
 
     function Test-ContentTypes {

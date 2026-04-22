@@ -29,14 +29,6 @@ vault:
       Minimum count of notes sharing a property value before
       property-to-folder promotion is flagged as a candidate.
 
-  retention:
-    audit_log_days:
-      type: int
-      default: 90
-      description: >
-        Days to retain audit log files before cleanup.
-        Aligns with default staleness threshold for active reference notes.
-
 # ─────────────────────────────────────────────────────────────
 # CONTENT TYPES — what KIND of note this is
 # ─────────────────────────────────────────────────────────────

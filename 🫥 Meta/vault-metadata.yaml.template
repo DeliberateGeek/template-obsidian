@@ -6,8 +6,6 @@ vault:
   name: ReplaceWithVaultName
   description: One-sentence purpose of this vault
   promotion_threshold: 8           # property -> folder promotion count
-  retention:
-    audit_log_days: 90
 
 # ─────────────────────────────────────────────────────────────
 # CONTENT TYPES — what KIND of note this is.

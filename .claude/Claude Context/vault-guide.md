@@ -55,10 +55,6 @@ The vault's metadata configuration lives at `🫥 Meta/vault-metadata.yaml` — 
 
 A rendered view is available at `🫥 Meta/Canonical Metadata.md` (auto-generated with dataview queries).
 
-### Findings reports
-
-When a metadata-check Skill run surfaces findings, the Skill writes a per-run report to `🫥 Meta/Audit Logs/` (filename includes a datetime stamp). Reports are git-tracked — they are archival evidence of what was found and what was resolved. Metadata changes themselves are captured by git; the report records what the Skill saw.
-
 ### Boundary rules (quick reference)
 
 | Use a... | When... |
