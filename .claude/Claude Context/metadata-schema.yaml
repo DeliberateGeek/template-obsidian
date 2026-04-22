@@ -2,8 +2,8 @@
 #
 # This file defines the shape of vault-metadata.yaml (the per-vault config).
 # It is invariant across all vaults — baked into template-obsidian.
-# Validation scripts and the /audit-metadata Skill read this file
-# to perform mechanical conformance checks.
+# Validation scripts (Invoke-MetadataValidate.ps1) and the /metadata-check
+# Skill read this file to perform mechanical conformance checks.
 #
 # See metadata-philosophy.md for the narrative design rationale.
 # See metadata-examples.md for worked classification cases.
@@ -218,12 +218,12 @@ tag_format_rules:
     - id: lowercase
       description: Tags must be lowercase
       auto_fix: true
-      enforcement: Script auto-fix at audit; Claude auto-fix at capture
+      enforcement: Script auto-fix when `/metadata-check` applies normalize; Claude auto-fix at capture
 
     - id: kebab-case
       description: Multi-word tags use kebab-case (hyphens, not underscores or camelCase)
       auto_fix: true
-      enforcement: Script auto-fix at audit; Claude auto-fix at capture
+      enforcement: Script auto-fix when `/metadata-check` applies normalize; Claude auto-fix at capture
 
     - id: leading-letter
       description: Tags must start with a letter (not a digit or symbol)
@@ -244,27 +244,13 @@ tag_format_rules:
         Invoke-MetadataNormalize.ps1) must emit inline shape; Claude
         auto-fixes at capture.
       auto_fix: true
-      enforcement: Script auto-fix at audit; Claude auto-fix at capture
+      enforcement: Script auto-fix when `/metadata-check` applies normalize; Claude auto-fix at capture
 
   soft_flag:
     - id: no-punctuation
       description: No punctuation other than hyphen (bans "/" — hierarchical tags rejected)
-      enforcement: Surface at session-end
+      enforcement: Surface on `/metadata-check` run
 
     - id: max-length
       description: Tags should not exceed ~30 characters
-      enforcement: Surface at session-end
-
-# ─────────────────────────────────────────────────────────────
-# AUDIT LOG FORMAT — daily rotation conventions
-# ─────────────────────────────────────────────────────────────
-audit_log:
-  location: "Meta/Audit Logs/"
-  filename_format: "YYYY-MM-DD.md"
-  rotation: daily
-  scope: Claude-initiated changes only
-  retention_default_days: 90
-  description: >
-    Audit logs track metadata changes made by Claude (user edits are
-    captured by git). Each daily file contains timestamped entries.
-    Cleanup is performed by /audit-metadata and metadata-audit-cleanup.ps1.
+      enforcement: Surface on `/metadata-check` run

@@ -14,20 +14,25 @@ Context for this procedure lives in WT#95 § "2026-04-21 — Scope cut to kernel
 
 ### Step 1 — Copy framework files
 
-Copy the following from `template-obsidian` into the vault's `🫥 Meta/`:
+Framework files land in three locations in the vault, mirroring `template-obsidian`'s own layout:
+
+Copy from `template-obsidian/.claude/Claude Context/` into `<vault>/.claude/Claude Context/`:
 
 - `metadata-philosophy.md`
 - `metadata-examples.md`
 - `metadata-schema.yaml`
+
+Copy from `template-obsidian/🫥 Meta/` into `<vault>/🫥 Meta/`:
+
 - `vault-metadata.yaml.template`
 - `Canonical Metadata.md.template`
 
-Copy framework scripts from `template-obsidian/.claude/scripts/` into `<vault>/.claude/scripts/`:
+Copy from `template-obsidian/.claude/scripts/` into `<vault>/.claude/scripts/`:
 
 - `Invoke-MetadataNormalize.ps1`
 - `Invoke-MetadataValidate.ps1`
 
-When the `/metadata-check` Skill lands (post-scope-cut), copy its directory from `template-obsidian/.claude/skills/metadata-check/` into `<vault>/.claude/skills/metadata-check/`. Until then, Step 1 produces a vault that can be validated/normalized via direct script invocation.
+When the `/metadata-check` Skill lands (see `DeliberateGeek/template-obsidian#27`), copy its directory from `template-obsidian/.claude/skills/metadata-check/` into `<vault>/.claude/skills/metadata-check/`. Until then, Step 1 produces a vault that can be validated/normalized via direct script invocation.
 
 ### Step 2 — Merge `.gitignore`
 
