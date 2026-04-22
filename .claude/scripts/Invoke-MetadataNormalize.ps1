@@ -64,6 +64,8 @@ Process {
 Begin {
     $ErrorActionPreference = 'Stop'
 
+    Import-Module (Join-Path $PSScriptRoot 'MetadataParsing.psm1') -Force
+
     # --- Parse note paths ---
     # Force array context — a single-element pipeline result would otherwise
     # collapse to a scalar string, and `$script:notePaths[0]` would index
@@ -161,115 +163,6 @@ Begin {
         return $map
     }
 
-    function Get-ParsedFrontmatter {
-        param(
-            [Parameter(Mandatory)]
-            [string]$Content
-        )
-
-        if ($Content -match '^---\r?\n') {
-            $firstDelimiter = [regex]::Match($Content, '^---\r?\n')
-            $searchStart = $firstDelimiter.Index + $firstDelimiter.Length
-            $secondDelimiter = [regex]::Match($Content.Substring($searchStart), '(?m)^---\r?\n')
-
-            if ($secondDelimiter.Success) {
-                $frontmatterEnd = $searchStart + $secondDelimiter.Index + $secondDelimiter.Length
-                $frontmatterContent = $Content.Substring($firstDelimiter.Length, $searchStart + $secondDelimiter.Index - $firstDelimiter.Length)
-                $body = $Content.Substring($frontmatterEnd)
-
-                return @{
-                    Frontmatter    = $frontmatterContent
-                    Body           = $body
-                    HasFrontmatter = $true
-                }
-            }
-        }
-
-        return @{
-            Frontmatter    = ''
-            Body           = $Content
-            HasFrontmatter = $false
-        }
-    }
-
-    function Get-TagsRegion {
-        # Locates the `tags:` region within a frontmatter text block. Returns
-        # $null if no top-level tags key exists. Otherwise returns:
-        #   Shape   = 'Inline' | 'Block' | 'Scalar' | 'Empty'
-        #   Tags    = string[]  (parsed tag values; empty for Empty shape)
-        #   Start   = int       (character index of line start in $Frontmatter)
-        #   Length  = int       (characters to remove, including trailing \n)
-        param(
-            [Parameter(Mandatory)]
-            [string]$Frontmatter
-        )
-
-        # Match a top-level `tags:` line (no leading whitespace)
-        $lineMatch = [regex]::Match($Frontmatter, '(?m)^tags\s*:[ \t]*(?<tail>.*?)(?:\r?\n|\z)')
-        if (-not $lineMatch.Success) { return $null }
-
-        $lineStart = $lineMatch.Index
-        $lineEnd = $lineStart + $lineMatch.Length
-        $tail = $lineMatch.Groups['tail'].Value.Trim()
-
-        # Inline array
-        if ($tail -match '^\[(?<inner>.*)\]\s*$') {
-            $inner = $Matches['inner'].Trim()
-            $tags = if ($inner -eq '') {
-                @()
-            }
-            else {
-                $inner -split ',' | ForEach-Object { $_.Trim().Trim('"',"'") } | Where-Object { $_ -ne '' }
-            }
-            $shape = if ($tags.Count -eq 0) { 'Empty' } else { 'Inline' }
-            return @{
-                Shape  = $shape
-                Tags   = [string[]]$tags
-                Start  = $lineStart
-                Length = $lineEnd - $lineStart
-            }
-        }
-
-        # Block list: consume following `  - value` lines
-        if ($tail -eq '') {
-            $tags = [System.Collections.Generic.List[string]]::new()
-            $cursor = $lineEnd
-            $len = $Frontmatter.Length
-            while ($cursor -lt $len) {
-                $nextNewline = $Frontmatter.IndexOf("`n", $cursor)
-                if ($nextNewline -lt 0) { $nextNewline = $len - 1 }
-                $line = $Frontmatter.Substring($cursor, $nextNewline - $cursor + 1)
-                $trimmed = $line.TrimEnd("`r","`n")
-                if ($trimmed -match '^\s+-\s+(?<val>.+?)\s*$') {
-                    $tags.Add($Matches['val'].Trim('"',"'"))
-                    $cursor = $nextNewline + 1
-                    continue
-                }
-                if ($trimmed -match '^\s*$') {
-                    # Blank line ends the block
-                    break
-                }
-                # Next top-level key or non-continuation content
-                break
-            }
-            $shape = if ($tags.Count -eq 0) { 'Empty' } else { 'Block' }
-            return @{
-                Shape  = $shape
-                Tags   = [string[]]$tags
-                Start  = $lineStart
-                Length = $cursor - $lineStart
-            }
-        }
-
-        # Scalar form: tags: single-value
-        return @{
-            Shape  = 'Scalar'
-            Tags   = [string[]]@($tail.Trim('"',"'"))
-            Start  = $lineStart
-            Length = $lineEnd - $lineStart
-        }
-    }
-
     function Resolve-NormalizedTagSet {
         # Given input tags and an alias map, produces an ordered, deduped
         # result preserving first-seen order. Reports which substitutions
@@ -326,17 +219,6 @@ Begin {
             Substitutions = $substitutions
             Collisions    = $collisions
         }
-    }
-
-    function ConvertTo-InlineTagsLine {
-        param(
-            [Parameter(Mandatory)]
-            [AllowEmptyCollection()]
-            [string[]]$Tags
-        )
-
-        if ($Tags.Count -eq 0) { return 'tags: []' }
-        return 'tags: [' + ($Tags -join ', ') + ']'
     }
 
     function Invoke-NormalizeNote {
