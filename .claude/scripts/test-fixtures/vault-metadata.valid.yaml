@@ -10,8 +10,6 @@ vault:
   name: TestFixtureVault
   description: Minimal conformant vault-metadata for validator regression testing
   promotion_threshold: 8
-  retention:
-    audit_log_days: 90
 
 content_types:
   - id: reference

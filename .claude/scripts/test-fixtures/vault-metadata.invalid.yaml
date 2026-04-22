@@ -26,8 +26,6 @@ vault:
   name: ""
   description: Deliberately-broken fixture for negative-case regression testing
   promotion_threshold: "eight"
-  retention:
-    audit_log_days: 90
 
 content_types:
   - id: Reference_Doc

@@ -36,18 +36,6 @@ FLATTEN ct.also_tag AS also_tag
 | created | date | single | Note creation date |
 | updated | date | single | Last modification date |
 
-## Recent Findings Reports
-
-```dataview
-TABLE WITHOUT ID
-  file.name AS "Report",
-  file.mtime AS "Written"
-FROM "🫥 Meta/Audit Logs"
-WHERE startswith(file.name, "audit-report-")
-SORT file.name DESC
-LIMIT 30
-```
-
 ## Deprecated
 
 ### Tags

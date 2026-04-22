@@ -126,12 +126,6 @@ Four layers, increasing in cost and judgment required:
 
 Layers 1-2 catch mechanical errors. Layer 3 catches misclassification, missing dimensions, and over-tagging — things only judgment can evaluate.
 
-## Findings Reports
-
-- **Location:** `Meta/Audit Logs/` (in-vault, git-tracked)
-- **Scope:** Per-run reports written by `/metadata-check` when it surfaces findings. Filename includes a datetime stamp so same-day re-runs do not overwrite prior reports.
-- **Purpose:** Archival evidence of what was checked, what was found, and what was resolved. The metadata changes themselves are captured by git; the report records what the Skill saw.
-
 ## Canonical List Governance
 
 - Accept unknown tags at capture (frictionless) — surface on demand via `/metadata-check` for classification with confirmation
