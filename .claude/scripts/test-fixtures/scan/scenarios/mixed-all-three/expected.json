@@ -1,0 +1,11 @@
+{
+  "alias_drift": [
+    { "note": "AliasNote.md", "from": "containers", "to": "docker", "collision": false }
+  ],
+  "shape_drift": [
+    { "note": "ShapeNote.md", "current_shape": "block" }
+  ],
+  "unknown_tags": [
+    { "tag": "homelab", "notes": ["UnknownNote.md"] }
+  ]
+}
