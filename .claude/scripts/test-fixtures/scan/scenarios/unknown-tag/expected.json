@@ -1,0 +1,7 @@
+{
+  "alias_drift": [],
+  "shape_drift": [],
+  "unknown_tags": [
+    { "tag": "homelab", "notes": ["NoteA.md", "NoteB.md"] }
+  ]
+}

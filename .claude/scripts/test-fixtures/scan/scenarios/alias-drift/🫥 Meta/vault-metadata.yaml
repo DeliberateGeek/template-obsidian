@@ -1,0 +1,35 @@
+vault:
+  name: TestScanVault
+  description: Fixture
+  promotion_threshold: 8
+  retention:
+    audit_log_days: 90
+
+content_types:
+  - id: reference
+    description: Reference notes
+    folder: null
+    also_tag: true
+    properties:
+      required: [status]
+      optional: []
+    lifecycle:
+      applicable: true
+      property: status
+      values: [active, archived]
+
+topics:
+  - id: docker
+    aliases: [containers, k8s-compose]
+  - id: kubernetes
+    aliases: [k8s]
+
+properties:
+  - name: status
+    type: enum
+    values: [active, archived]
+    cardinality: single
+
+deprecated:
+  tags: []
+  properties: []
