@@ -30,8 +30,18 @@ function Get-ParsedFrontmatter {
     #>
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [AllowNull()]
         [string]$Content
     )
+
+    if ([string]::IsNullOrEmpty($Content)) {
+        return @{
+            Frontmatter    = ''
+            Body           = ''
+            HasFrontmatter = $false
+        }
+    }
 
     if ($Content -match '^---\r?\n') {
         $firstDelimiter = [regex]::Match($Content, '^---\r?\n')
