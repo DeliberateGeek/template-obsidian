@@ -1,3 +1,0 @@
-# Canonical encountered before alias. Categorization must match the
-# alias-first case — both orderings are collisions (canonical was present).
-NORMALIZE+DEDUPE: `inline-collision-reverse.md` tag home-assistant -> automation (canonical already present)
