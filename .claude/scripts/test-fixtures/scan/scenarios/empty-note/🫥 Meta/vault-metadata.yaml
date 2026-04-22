@@ -1,0 +1,33 @@
+vault:
+  name: TestScanVault
+  description: Fixture
+  promotion_threshold: 8
+
+content_types:
+  - id: reference
+    description: Reference notes
+    folder: null
+    also_tag: true
+    properties:
+      required: [status]
+      optional: []
+    lifecycle:
+      applicable: true
+      property: status
+      values: [active, archived]
+      staleness:
+        active: 90d
+
+topics:
+  - id: docker
+    aliases: [containers]
+
+properties:
+  - name: status
+    type: enum
+    values: [active, archived]
+    cardinality: single
+
+deprecated:
+  tags: []
+  properties: []
