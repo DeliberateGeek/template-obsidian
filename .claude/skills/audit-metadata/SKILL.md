@@ -3,6 +3,18 @@ name: audit-metadata
 description: On-demand full-vault metadata audit — canonical compliance, fuzzy synonym detection, property integrity, staleness, promotion and retirement candidates, and audit log hygiene for Obsidian vaults seeded with the metadata framework
 ---
 
+> **Status: Reference-only (retained for design input to `/metadata-check`).**
+>
+> This Skill is no longer maintained and is **not expected to execute correctly.** It is retained to preserve lessons from the Phase 1 Skill implementation for use when designing `/metadata-check` (the kernel-scope replacement, tracked in `DeliberateGeek/template-obsidian#27`).
+>
+> After the kernel scope cut landed (`DeliberateGeek/template-obsidian#26`), several runtime dependencies of this Skill were removed: the daily-rotation `Audit Logs/YYYY-MM-DD.md` file is no longer written by any script (so Section 6 has no input), `Set-MetadataDefer.ps1` was deleted (so deferral flows no longer function), and the `/init-vault-metadata-framework` Skill was deleted (so references to it are dead). The **text** of every section remains intact — the text is the reference value, not the runtime behavior.
+>
+> **When using this Skill as reference for `/metadata-check` design:** extract patterns worth preserving and anti-patterns to avoid; do NOT ground the new design in this implementation (see `DeliberateGeek/template-obsidian#27` clarification comment for the "how to use / how not to use" framing).
+>
+> **Removal:** this directory is deleted once `/metadata-check` lands, tracked in a follow-up issue filed as part of `#26`.
+
+---
+
 # /audit-metadata — On-Demand Vault Metadata Audit
 
 **Purpose:** Full-vault validation, drift detection, and fuzzy-synonym discovery for an Obsidian vault that has been seeded with the metadata framework. Distinct from (a) at-capture classification, where Claude proposes tags/properties on a single note in real time, and (b) session-end review, which acts on a queue of deferred items accumulated during the session. This Skill does a comprehensive sweep of the entire vault on demand.
