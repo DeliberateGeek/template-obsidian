@@ -2,16 +2,21 @@
 
 <#
 .SYNOPSIS
-    Normalizes declared alias tags to their canonical form across Obsidian notes.
+    Normalizes declared alias tags to their canonical form, or rewrites tag
+    region shape to inline, across Obsidian notes.
 
 .DESCRIPTION
-    Reads an alias map (from JSON file or inline hashtable) and replaces
-    occurrences of alias tags with their canonical equivalents in the specified
-    notes' frontmatter.
+    Two modes, selected by parameter set:
 
-    Only declared aliases are normalized silently. Fuzzy/undeclared matches
-    are NOT handled by this script — those require user confirmation via the
-    invoking Skill.
+    - Alias mode (default): reads an alias map and replaces occurrences of
+      alias tags with their canonical equivalents in the specified notes'
+      frontmatter. Only declared aliases are normalized silently. Fuzzy or
+      undeclared matches are NOT handled — those require user confirmation
+      via the invoking Skill.
+
+    - ShapeOnly mode (-ShapeOnly): rewrites each note's tags region to inline
+      shape (`tags: [a, b, c]`), preserving the existing tag set. No alias
+      substitution. Notes already in inline shape are skipped.
 
 .PARAMETER Notes
     Comma-delimited list of note file paths (relative to vault root or absolute).
@@ -21,27 +26,31 @@
     where each key is an alias and the value is the canonical tag.
     Example: { "containers": "docker", "docker-compose": "docker", "k8s": "kubernetes" }
 
+.PARAMETER ShapeOnly
+    Switch — when set, normalize tags region shape only (no alias substitution).
+    Mutually exclusive with -AliasMapPath.
+
 .EXAMPLE
     pwsh.exe -File .claude/scripts/Invoke-MetadataNormalize.ps1 -Notes "Knowledge/Homelab/Note.md" -AliasMapPath ".claude/temp/alias-map.json"
+
+.EXAMPLE
+    pwsh.exe -File .claude/scripts/Invoke-MetadataNormalize.ps1 -Notes "Knowledge/Block-Shaped.md,Knowledge/Scalar-Shaped.md" -ShapeOnly
 #>
 
-[CmdletBinding(SupportsShouldProcess)]
+[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Alias')]
 param(
     [Parameter(Mandatory)]
     [string]$Notes,
 
-    [Parameter(Mandatory)]
-    [string]$AliasMapPath
+    [Parameter(Mandatory, ParameterSetName = 'Alias')]
+    [string]$AliasMapPath,
+
+    [Parameter(Mandatory, ParameterSetName = 'ShapeOnly')]
+    [switch]$ShapeOnly
 )
 
 Process {
     Assert-NotesProvided
-    $aliasMap = Get-AliasMap -Path $AliasMapPath
-
-    if ($aliasMap.Count -eq 0) {
-        Write-Host "  ⚠️ Alias map is empty — nothing to normalize." -ForegroundColor Yellow
-        exit 0
-    }
 
     if ($WhatIfPreference) {
         Write-Host "  ⚠️ [WHATIF MODE] No changes will be made" -ForegroundColor Yellow
@@ -49,6 +58,26 @@ Process {
 
     $vaultRoot = Resolve-VaultRoot -StartPath $script:notePaths[0]
     $script:totalNormalized = 0
+
+    if ($PSCmdlet.ParameterSetName -eq 'ShapeOnly') {
+        foreach ($notePath in $script:notePaths) {
+            $resolvedPath = Resolve-NotePath -NotePath $notePath
+            Assert-NoteExists -Path $resolvedPath
+            Invoke-ShapeOnlyNote -Path $resolvedPath -VaultRoot $vaultRoot
+        }
+
+        if ($script:totalNormalized -eq 0) {
+            Write-Host "  ℹ️ No shape drift found to normalize." -ForegroundColor DarkGray
+        }
+        return
+    }
+
+    $aliasMap = Get-AliasMap -Path $AliasMapPath
+
+    if ($aliasMap.Count -eq 0) {
+        Write-Host "  ⚠️ Alias map is empty — nothing to normalize." -ForegroundColor Yellow
+        exit 0
+    }
 
     foreach ($notePath in $script:notePaths) {
         $resolvedPath = Resolve-NotePath -NotePath $notePath
@@ -280,6 +309,43 @@ Begin {
             Set-Content -Path $Path -Value $newContent -NoNewline -Encoding utf8NoBOM
 
             $script:totalNormalized += $resolved.Substitutions.Count + $resolved.Collisions.Count
+        }
+    }
+
+    function Invoke-ShapeOnlyNote {
+        # Rewrite a note's tags region to inline shape, preserving the tag
+        # set. Skip notes whose tags region is already Inline or absent.
+        param(
+            [Parameter(Mandatory)]
+            [string]$Path,
+
+            [Parameter(Mandatory)]
+            [string]$VaultRoot
+        )
+
+        $content = Get-Content -Path $Path -Raw -Encoding utf8
+        $parsed = Get-ParsedFrontmatter -Content $content
+
+        if (-not $parsed.HasFrontmatter) { return }
+
+        $frontmatter = $parsed.Frontmatter
+        $region = Get-TagsRegion -Frontmatter $frontmatter
+
+        if (-not $region) { return }
+        if ($region.Tags.Count -eq 0) { return }
+        if ($region.Shape -eq 'Inline') { return }
+
+        $newTagsLine = (ConvertTo-InlineTagsLine -Tags $region.Tags) + "`n"
+        $newFrontmatter = $frontmatter.Substring(0, $region.Start) + $newTagsLine + $frontmatter.Substring($region.Start + $region.Length)
+
+        $relativePath = $Path.Replace($VaultRoot, '').TrimStart('\', '/')
+        $previousShape = $region.Shape.ToLowerInvariant()
+
+        if ($PSCmdlet.ShouldProcess($relativePath, "Normalize shape: $previousShape -> inline ($($region.Tags.Count) tags preserved)")) {
+            $newContent = "---`n$newFrontmatter---`n$($parsed.Body)"
+            Set-Content -Path $Path -Value $newContent -NoNewline -Encoding utf8NoBOM
+
+            $script:totalNormalized += 1
         }
     }
 }
