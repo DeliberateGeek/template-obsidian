@@ -86,9 +86,7 @@ Claude proposes metadata additions/corrections inline. User responds:
 
 ### On-demand (`/metadata-check` Skill)
 
-> **Note:** `/metadata-check` is the kernel-scope Skill that replaces the prior modal `/audit-metadata` surface. Design is in progress — see `DeliberateGeek/template-obsidian#27`. Until it lands, `/audit-metadata` remains in the repo as a design-reference artifact (not runtime-functional).
-
-The operator invokes `/metadata-check` on demand. The Skill reads `🫥 Meta/vault-metadata.yaml`, runs validate, presents findings conversationally (unknown tags, alias drift, shape irregularities, property-value drift), and offers per-finding disposition. Approved changes are applied via `Invoke-MetadataNormalize.ps1`.
+The operator invokes `/metadata-check` on demand. The Skill reads `🫥 Meta/vault-metadata.yaml`, runs validate, scans notes via `Invoke-MetadataScan.ps1`, and presents findings conversationally across three categories: alias drift, shape drift, unknown tags. Each category gets per-finding disposition; approved changes apply via `Invoke-MetadataNormalize.ps1`.
 
 ## Alias Normalization
 
