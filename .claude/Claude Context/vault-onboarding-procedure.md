@@ -31,8 +31,12 @@ Copy from `template-obsidian/.claude/scripts/` into `<vault>/.claude/scripts/`:
 
 - `Invoke-MetadataNormalize.ps1`
 - `Invoke-MetadataValidate.ps1`
+- `Invoke-MetadataScan.ps1`
+- `MetadataParsing.psm1`
 
-When the `/metadata-check` Skill lands (see `DeliberateGeek/template-obsidian#27`), copy its directory from `template-obsidian/.claude/skills/metadata-check/` into `<vault>/.claude/skills/metadata-check/`. Until then, Step 1 produces a vault that can be validated/normalized via direct script invocation.
+Copy from `template-obsidian/.claude/skills/` into `<vault>/.claude/skills/`:
+
+- `metadata-check/` (the Skill directory — used for ongoing drift handling after onboarding)
 
 ### Step 2 — Merge `.gitignore`
 
@@ -44,13 +48,22 @@ Copy `🫥 Meta/vault-metadata.yaml.template` to `🫥 Meta/vault-metadata.yaml`
 
 ### Step 4 — Scan existing tag/property usage
 
-Run a discovery scan against the vault's notes. Extract:
+Run a discovery scan against the vault's notes. Two complementary passes:
 
-- All unique tags with usage counts
-- All unique frontmatter properties with usage counts
-- Any shape irregularities (block vs. inline tag arrays, etc.)
+**Pass A — structured scan (authoritative for tags and shape).** Invoke:
 
-Present a frequency table to the operator. `Invoke-MetadataValidate.ps1` can produce this directly if run with no canonical list, or it can be done as an inline grep/parse pass — either is fine.
+```
+pwsh.exe -File .claude/scripts/Invoke-MetadataScan.ps1 -VaultRoot . -Json
+```
+
+The scan script compares every note's frontmatter tags against the canonical list in `vault-metadata.yaml` (which at this point is still the `.template` stub — so essentially every tag in the vault will surface as "unknown"). The `-Json` output categorizes findings as alias drift, shape drift, and unknown tags. Present the `unknown_tags` array to the operator as the canonical-shaping input — each entry has a `tag` and a list of notes using it.
+
+**Pass B — inline enumeration (for properties and ad-hoc counts).** Since the scan script is frontmatter-tags-only, do an inline grep/parse pass to surface:
+
+- All unique frontmatter properties with usage counts (scan does not cover this)
+- Optional: per-tag usage counts if the operator wants frequency weighting alongside the scan's per-tag note lists
+
+Present both passes to the operator as input for Step 5. The scan output is the mechanical ground-truth; the inline enumeration fills in what the scan doesn't cover.
 
 ### Step 5 — Interactive canonical-list shaping
 
@@ -87,4 +100,4 @@ Wait for operator approval per the standard commit workflow.
 
 - Every vault's canonical list diverges from the template's starter. The template is a starting point, not a universal standard.
 - If the vault is brand-new (no existing notes), Step 4 surfaces nothing; Step 5 becomes "start from template defaults, tailor to purpose."
-- Re-running this procedure on an already-onboarded vault is not supported. For drift over time, use `/metadata-check` (once it lands). For a ground-up reconsideration, manually edit `vault-metadata.yaml` or delete-and-re-onboard.
+- Re-running this procedure on an already-onboarded vault is not supported. For drift over time, use `/metadata-check`. For a ground-up reconsideration, manually edit `vault-metadata.yaml` or delete-and-re-onboard.
