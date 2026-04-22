@@ -1,2 +1,0 @@
-# Pure alias substitution, canonical not present — logs as NORMALIZE.
-NORMALIZE: `inline-alias.md` tag home-assistant -> automation

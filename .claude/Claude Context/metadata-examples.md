@@ -109,7 +109,7 @@ Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical ru
 - **Properties:** (none yet)
 - **Folder:** `Inbox/`
 
-**Rationale:** Inbox notes get metadata at triage, not at capture. The framework's defer mechanism exists precisely for this: stamp `metadata_review: pending` and move on. Forcing metadata at capture time creates decision fatigue — the anti-pattern this framework is designed to prevent.
+**Rationale:** Inbox notes get metadata at triage, not at capture. The framework optimizes for capture velocity — classify later when the operator revisits the note or runs `/metadata-check`. Forcing metadata at capture time creates decision fatigue, the anti-pattern this framework is designed to prevent.
 
 ---
 
@@ -241,7 +241,7 @@ Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical ru
 
 **Judgment process:**
 
-1. **Recognition:** During `/audit-metadata` or session-end review, Claude notices that 10 notes in `Knowledge/Homelab/` share `host + service + status` properties that aren't in the `reference` content type's `properties.required`.
+1. **Recognition:** During `/metadata-check` (or ad-hoc review while working in the homelab area), Claude notices that 10 notes in `Knowledge/Homelab/` share `host + service + status` properties that aren't in the `reference` content type's `properties.required`.
 
 2. **Evaluation:** Is this a stable pattern or coincidence?
    - 10 notes (above the default 8 promotion threshold)
@@ -300,18 +300,17 @@ Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical ru
 
 ---
 
-## Example 21 — Deferred metadata at capture
+## Example 21 — Capture without metadata
 
 **Scenario:** Mid-session, Claude creates a new note while working on a homelab task. The user wants to keep moving, not classify right now.
 
 **Flow:**
-1. Claude creates the note in `Inbox/`
-2. Claude proposes tags — user says "defer"
-3. Claude runs `metadata-defer.ps1`, stamps `metadata_review: pending` with reason "created during homelab session, classify later"
-4. At session-end, the note appears in the pending queue
-5. User can classify then, or defer again
+1. Claude creates the note in `Inbox/` with no tags or properties
+2. Claude proposes tags — user says "move on"
+3. Claude commits the note as-is; the note sits in `Inbox/` without metadata
+4. Next time the operator revisits the note (or runs `/metadata-check` on the vault), the unclassified note surfaces for disposition
 
-**Rationale:** The framework optimizes for capture velocity. Forcing classification at creation time is where most tag systems fail — decision fatigue at the worst moment. Defer is a first-class operation, not a failure mode.
+**Rationale:** The framework optimizes for capture velocity. Forcing classification at creation time is where most tag systems fail — decision fatigue at the worst moment. Capturing without metadata is a first-class option; the note just doesn't show up in tag/property queries until it gets classified.
 
 ---
 
@@ -319,7 +318,7 @@ Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical ru
 
 **Scenario:** The tag `training` exists in the canonical list but appears on zero current notes. All former `training` notes were either re-tagged `learning` or archived.
 
-**Classification:** Retirement candidate (flagged in `/audit-metadata` section 7).
+**Classification:** Retirement candidate — surfaced when the operator manually reviews the canonical list, or by `/metadata-check` if the Skill's design surfaces zero-usage tags.
 
 **Rationale:** Retirement is based on 0-usage count, not elapsed time. A tag with even one active note is not a retirement candidate. Once flagged, the user confirms retirement — the tag moves to the `deprecated` section. If a new note later needs `training`, the deprecated list catches it and suggests `learning` instead.
 
@@ -342,9 +341,9 @@ Not as a YAML block list (`tags:\n  - reference`) or a bare scalar. Canonical ru
 **Invariant (same everywhere):**
 - Boundary rules (tag/property/folder/link)
 - Tag format rules (lowercase, kebab-case, etc.)
-- Capture/defer/audit flow
+- Capture-and-check flow
 - Validation layers
-- Audit log format and location
+- Findings-report location (`🫥 Meta/Audit Logs/`)
 
 **Per-vault (varies):**
 - Which content types exist and their lifecycle settings

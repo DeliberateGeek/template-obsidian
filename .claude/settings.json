@@ -1,9 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pwsh.exe -File *Set-MetadataDefer.ps1*)",
       "Bash(pwsh.exe -File *Invoke-MetadataNormalize.ps1*)",
-      "Bash(pwsh.exe -File *Remove-MetadataAuditLogs.ps1*)"
+      "Bash(pwsh.exe -File *Invoke-MetadataValidate.ps1*)"
     ]
   }
 }

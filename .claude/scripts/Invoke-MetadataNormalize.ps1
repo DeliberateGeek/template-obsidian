@@ -7,11 +7,11 @@
 .DESCRIPTION
     Reads an alias map (from JSON file or inline hashtable) and replaces
     occurrences of alias tags with their canonical equivalents in the specified
-    notes' frontmatter. Appends an audit log entry for each normalization.
+    notes' frontmatter.
 
     Only declared aliases are normalized silently. Fuzzy/undeclared matches
     are NOT handled by this script — those require user confirmation via the
-    /audit-metadata Skill.
+    invoking Skill.
 
 .PARAMETER Notes
     Comma-delimited list of note file paths (relative to vault root or absolute).
@@ -48,13 +48,12 @@ Process {
     }
 
     $vaultRoot = Resolve-VaultRoot -StartPath $script:notePaths[0]
-    $auditLogDir = Resolve-AuditLogDirectory -VaultRoot $vaultRoot
     $script:totalNormalized = 0
 
     foreach ($notePath in $script:notePaths) {
         $resolvedPath = Resolve-NotePath -NotePath $notePath
         Assert-NoteExists -Path $resolvedPath
-        Invoke-NormalizeNote -Path $resolvedPath -AliasMap $aliasMap -VaultRoot $vaultRoot -AuditLogDir $auditLogDir
+        Invoke-NormalizeNote -Path $resolvedPath -AliasMap $aliasMap -VaultRoot $vaultRoot
     }
 
     if ($script:totalNormalized -eq 0) {
@@ -139,23 +138,6 @@ Begin {
         exit 1
     }
 
-    function Resolve-AuditLogDirectory {
-        param(
-            [Parameter(Mandatory)]
-            [string]$VaultRoot
-        )
-
-        $metaDir = Get-ChildItem -Path $VaultRoot -Directory |
-            Where-Object { $_.Name -match 'Meta$' } |
-            Select-Object -First 1
-
-        if ($metaDir) {
-            return Join-Path $metaDir.FullName 'Audit Logs'
-        }
-
-        return Join-Path $VaultRoot 'Meta' 'Audit Logs'
-    }
-
     function Get-AliasMap {
         param(
             [Parameter(Mandatory)]
@@ -207,32 +189,6 @@ Begin {
             Frontmatter    = ''
             Body           = $Content
             HasFrontmatter = $false
-        }
-    }
-
-    function Write-AuditEntry {
-        param(
-            [Parameter(Mandatory)]
-            [string]$LogDir,
-
-            [Parameter(Mandatory)]
-            [string]$Message
-        )
-
-        if (-not (Test-Path $LogDir)) {
-            New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
-        }
-
-        $logFile = Join-Path $LogDir "$(Get-Date -Format 'yyyy-MM-dd').md"
-        $timestamp = Get-Date -Format 'HH:mm:ss'
-        $entry = "- ``$timestamp`` $Message"
-
-        if (Test-Path $logFile) {
-            Add-Content -Path $logFile -Value $entry -Encoding utf8NoBOM
-        }
-        else {
-            $header = "# Metadata Audit Log $(Get-Date -Format 'yyyy-MM-dd')`n`n$entry"
-            Set-Content -Path $logFile -Value $header -Encoding utf8NoBOM
         }
     }
 
@@ -392,10 +348,7 @@ Begin {
             [hashtable]$AliasMap,
 
             [Parameter(Mandatory)]
-            [string]$VaultRoot,
-
-            [Parameter(Mandatory)]
-            [string]$AuditLogDir
+            [string]$VaultRoot
         )
 
         $content = Get-Content -Path $Path -Raw -Encoding utf8
@@ -443,13 +396,6 @@ Begin {
         if ($PSCmdlet.ShouldProcess($relativePath, "Normalize tags: $normalizationList")) {
             $newContent = "---`n$newFrontmatter---`n$($parsed.Body)"
             Set-Content -Path $Path -Value $newContent -NoNewline -Encoding utf8NoBOM
-
-            foreach ($s in $resolved.Substitutions) {
-                Write-AuditEntry -LogDir $AuditLogDir -Message "NORMALIZE: ``$relativePath`` tag $($s.Alias) -> $($s.Canonical)"
-            }
-            foreach ($c in $resolved.Collisions) {
-                Write-AuditEntry -LogDir $AuditLogDir -Message "NORMALIZE+DEDUPE: ``$relativePath`` tag $($c.Alias) -> $($c.Canonical) (canonical already present)"
-            }
 
             $script:totalNormalized += $resolved.Substitutions.Count + $resolved.Collisions.Count
         }

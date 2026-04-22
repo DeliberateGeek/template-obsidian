@@ -37,6 +37,6 @@ When working in this vault, follow the shared Obsidian conventions:
 | `📥 Inbox/` | Quick captures, unsorted notes |
 | `📦 Archive/` | Completed or retired content |
 | `🫥 Attachments/` | Images, PDFs, media files |
-| `🫥 Meta/` | Metadata framework: canonical list, audit logs |
+| `🫥 Meta/` | Metadata framework: canonical list (`vault-metadata.yaml`), per-run findings reports |
 | `🫥 Templater/` | Templater community plugin templates (uses `tp.` syntax) |
 | `🫥 Templates/` | Obsidian core templates (simple variable substitution) |

@@ -2,7 +2,7 @@
 
 Reference documentation for the PowerShell scripts shipped under `.claude/scripts/` as part of the Obsidian metadata framework. Covers runtime prerequisites and the exit-code convention that framework scripts follow.
 
-This document is read by contributors maintaining the scripts and by Skills (`/init-vault-metadata-framework`, `/audit-metadata`, `/update-metadata-framework`) that invoke them.
+This document is read by contributors maintaining the scripts and by Skills that invoke them.
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ Examples of exit 1 causes: missing required top-level section in `vault-metadata
 
 ### Scripts that predate this convention
 
-`Invoke-MetadataNormalize.ps1`, `Set-MetadataDefer.ps1`, and `Remove-MetadataAuditLogs.ps1` currently use a simpler 0/1 convention (success/error). They do not surface findings in the validator sense — they either apply a mutation or they do not. No action required; the 0/1/2 convention applies to new scripts that introduce a findings-vs-environment distinction.
+`Invoke-MetadataNormalize.ps1` currently uses a simpler 0/1 convention (success/error). It does not surface findings in the validator sense — it either applies a mutation or it does not. No action required; the 0/1/2 convention applies to new scripts that introduce a findings-vs-environment distinction.
 
 ## Script inventory
 
@@ -44,8 +44,6 @@ Examples of exit 1 causes: missing required top-level section in `vault-metadata
 |--------|---------|-----------------|
 | `Invoke-MetadataNormalize.ps1` | Normalize declared alias tags to canonical form in a note | 0/1 |
 | `Invoke-MetadataValidate.ps1` | Validate `vault-metadata.yaml` against `metadata-schema.yaml` | 0/1/2 |
-| `Remove-MetadataAuditLogs.ps1` | Delete daily audit logs older than the retention threshold | 0/1 |
-| `Set-MetadataDefer.ps1` | Stamp `metadata_review: pending` on a note | 0/1 |
 
 ## Related
 

@@ -91,15 +91,6 @@ properties:
     type: date
     cardinality: single
 
-  - name: metadata_review
-    type: enum
-    values: [pending]
-    cardinality: single
-
-  - name: metadata_review_note
-    type: string
-    cardinality: single
-
   # Add as needed; start broad, specialize under pressure.
 
 # ─────────────────────────────────────────────────────────────

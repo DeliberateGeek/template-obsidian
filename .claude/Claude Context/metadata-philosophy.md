@@ -45,7 +45,7 @@ That one sentence resolves ~80% of day-to-day classification questions without l
 3. **Must start with a letter** — reject + prompt (human decision required)
 4. **Minimum 2 characters** — reject + prompt
 
-### Soft flag — surface at session-end, don't block
+### Soft flag — surface on `/metadata-check`, don't block
 
 5. **No punctuation other than `-`** (bans `/` — hierarchical tags rejected)
 6. **Maximum ~30 characters**
@@ -64,7 +64,7 @@ Promote a property-value to its own folder when **ALL** of:
 2. Folder name would be stable (not likely renamed/split within 6 months)
 3. You'd navigate to it visually at least weekly
 
-Migration is flagged at session-end; executed by Claude via script on approval.
+Migration is flagged by `/metadata-check`; executed by Claude via script on approval.
 
 ## Hierarchy
 
@@ -72,47 +72,29 @@ Migration is flagged at session-end; executed by Claude via script on approval.
 - Hierarchy emerges from **folder path + flat atomic properties + dataview composition** at query time
 - If you feel the urge to nest tags, that's a signal to use folder structure or properties instead
 
-## Capture, Defer, and Audit Flow
+## Capture and Check Flow
 
-The framework uses a three-phase approach that keeps capture frictionless while ensuring nothing falls through the cracks.
+The framework keeps capture frictionless and surfaces drift on demand via a single lightweight Skill.
 
 ### At capture (when Claude is engaged)
 
 Claude proposes metadata additions/corrections inline. User responds:
 
 - **Accept** — Claude writes changes, notes in end-of-turn summary
-- **Defer** — Claude runs `metadata-defer.ps1` (pre-approved, silent), stamps `metadata_review: pending` plus optional reason, moves on
+- **Move on** — Claude captures the note without metadata; classification happens later when the operator revisits the note or runs `/metadata-check`
 - **Reject** — Claude flags for canonical-list review
 
-### At session-end (automatic)
+### On-demand (`/metadata-check` Skill)
 
-- Short-circuits on empty queue ("closed cleanly")
-- On populated queue: numbered summary table, categorized findings
-- Dispositions: walk-through / mass-accept / defer-all / skip / **hybrid range syntax** ("approve 1, 3, 6-10; interactive rest")
-- Writes audit log entry + session-end marker file
+> **Note:** `/metadata-check` is the kernel-scope Skill that replaces the prior modal `/audit-metadata` surface. Design is in progress — see `DeliberateGeek/template-obsidian#27`. Until it lands, `/audit-metadata` remains in the repo as a design-reference artifact (not runtime-functional).
 
-### On-demand (`/audit-metadata` Skill)
-
-Full-vault pass covering eight sections (empty sections omitted):
-
-1. Canonical compliance
-2. Fuzzy synonym candidates (**always confirmation-required**)
-3. Property integrity (broken wiki-links, missing required fields)
-4. Staleness report
-5. Long-pending review flags (> 30 days)
-6. Property-to-folder promotion candidates
-7. Retirement candidates: canonical tags with 0 current usages (not time-based)
-8. Audit log hygiene
-
-### At session-start (automatic)
-
-Reads last-session-end marker. If prior session ended abruptly, surfaces lingering pending items.
+The operator invokes `/metadata-check` on demand. The Skill reads `🫥 Meta/vault-metadata.yaml`, runs validate, presents findings conversationally (unknown tags, alias drift, shape irregularities, property-value drift), and offers per-finding disposition. Approved changes are applied via `Invoke-MetadataNormalize.ps1`.
 
 ## Alias Normalization
 
-- **Declared aliases** — silently normalized with audit log entry (pre-approved; the mapping is already vouched for)
+- **Declared aliases** — silently normalized by `Invoke-MetadataNormalize.ps1` (pre-approved; the mapping is already vouched for)
 - **Fuzzy match candidates** — always confirmation-required, never auto-normalized
-- **Unknown tags** — accepted at capture without friction; surfaced at session-end for batch classification (alias / new canonical / delete)
+- **Unknown tags** — accepted at capture without friction; surfaced on demand by `/metadata-check` for classification (alias / new canonical / delete)
 
 ## Staleness
 
@@ -146,19 +128,17 @@ Four layers, increasing in cost and judgment required:
 
 Layers 1-2 catch mechanical errors. Layer 3 catches misclassification, missing dimensions, and over-tagging — things only judgment can evaluate.
 
-## Audit Log
+## Findings Reports
 
-- **Location:** `Meta/Audit Logs/YYYY-MM-DD.md` (daily rotation, in-vault, git-tracked)
-- **Scope:** Claude-initiated changes only (user edits already captured by git)
-- **Retention:** 90 days (default, vault-tunable; aligns with `status: active` staleness threshold)
-- **Cleanup:** Part of `/audit-metadata` Skill, deliberate and logged
+- **Location:** `Meta/Audit Logs/` (in-vault, git-tracked)
+- **Scope:** Per-run reports written by `/metadata-check` when it surfaces findings. Filename includes a datetime stamp so same-day re-runs do not overwrite prior reports.
+- **Purpose:** Archival evidence of what was checked, what was found, and what was resolved. The metadata changes themselves are captured by git; the report records what the Skill saw.
 
 ## Canonical List Governance
 
-- Accept unknown tags at capture (frictionless) — surface at session-end for classification with confirmation
+- Accept unknown tags at capture (frictionless) — surface on demand via `/metadata-check` for classification with confirmation
 - Declared aliases are first-class canonical data
-- Fuzzy match reserved for `/audit-metadata` Skill
-- Retirement is based on 0-usage count, not elapsed time — a tag with even one active note is not a retirement candidate
+- Fuzzy match reserved for `/metadata-check` Skill
 
 ## Plugin Integration
 
@@ -185,8 +165,7 @@ Layers 1-2 catch mechanical errors. Layer 3 catches misclassification, missing d
 
 - **Additive install, merge-not-overwrite config** — orthogonal plugins untouched
 - Config added to existing plugin's data is namespaced where possible; conflicts flagged, never silently overwritten
-- `.template-version` marker enables targeted upgrades
 
 ## Provisioning Contract
 
-The `.template-version` marker in `Meta/` records which framework version a vault is running. `/migrate-vault --update` diffs local against current template and proposes targeted updates — enables long-term maintenance without re-seeding.
+The template ships framework-standard files (`metadata-schema.yaml`, `metadata-examples.md`, this file). Each vault tailors its per-vault canonical list (`🫥 Meta/vault-metadata.yaml`) from the template defaults. When the standard evolves, the operator pulls desired changes into each vault manually (see `.claude/Claude Context/vault-onboarding-procedure.md`).

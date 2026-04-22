@@ -11,7 +11,7 @@ This is an Obsidian vault workspace managed with git. Content is organized in ma
 | `📥 Inbox/` | Quick captures and unsorted notes |
 | `📦 Archive/` | Completed or retired content |
 | `🫥 Attachments/` | Images, PDFs, media files |
-| `🫥 Meta/` | Metadata framework: canonical list, audit logs |
+| `🫥 Meta/` | Metadata framework: canonical list (`vault-metadata.yaml`), per-run findings reports |
 | `🫥 Templater/` | Templater community plugin templates (uses `tp.` syntax) |
 | `🫥 Templates/` | Obsidian core templates (simple variable substitution) |
 | `Home.md` | Vault home page and navigation hub |
@@ -55,9 +55,9 @@ The vault's metadata configuration lives at `🫥 Meta/vault-metadata.yaml` — 
 
 A rendered view is available at `🫥 Meta/Canonical Metadata.md` (auto-generated with dataview queries).
 
-### Audit logs
+### Findings reports
 
-Metadata changes made by Claude are logged to `🫥 Meta/Audit Logs/YYYY-MM-DD.md` (daily rotation, git-tracked). User edits are captured by git itself. Audit logs are retained for 90 days by default (vault-tunable).
+When a metadata-check Skill run surfaces findings, the Skill writes a per-run report to `🫥 Meta/Audit Logs/` (filename includes a datetime stamp). Reports are git-tracked — they are archival evidence of what was found and what was resolved. Metadata changes themselves are captured by git; the report records what the Skill saw.
 
 ### Boundary rules (quick reference)
 
