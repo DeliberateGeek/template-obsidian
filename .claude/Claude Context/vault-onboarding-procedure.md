@@ -53,10 +53,12 @@ Run a discovery scan against the vault's notes. Two complementary passes:
 **Pass A — structured scan (authoritative for tags and shape).** Invoke:
 
 ```
-pwsh.exe -File .claude/scripts/Invoke-MetadataScan.ps1 -VaultRoot . -Json
+pwsh.exe -File .claude/scripts/Invoke-MetadataScan.ps1 -VaultRoot . -OutFile <scan-output>.json
 ```
 
-The scan script compares every note's frontmatter tags against the canonical list in `vault-metadata.yaml` (which at this point is still the `.template` stub — so essentially every tag in the vault will surface as "unknown"). The `-Json` output categorizes findings as alias drift, shape drift, and unknown tags. Present the `unknown_tags` array to the operator as the canonical-shaping input — each entry has a `tag` and a list of notes using it.
+Use `-OutFile <path>` (not `-Json`) to write findings as UTF-8 to disk. `-OutFile` bypasses the console codepage, which is required when vault paths contain surrogate-pair emoji characters (📚, 🗄️, etc. — corrupted by cp1252 on Windows). `-Json` emits to stdout and is safe for ASCII-only vaults but lossy for emoji paths.
+
+The scan script compares every note's frontmatter tags against the canonical list in `vault-metadata.yaml` (which at this point is still the `.template` stub — so essentially every tag in the vault will surface as "unknown"). Categorizes findings as alias drift, shape drift, and unknown tags. Read the scan output file back with `Get-Content -Raw -Encoding utf8 | ConvertFrom-Json` and present the `unknown_tags` array to the operator as the canonical-shaping input — each entry has a `tag` and a list of notes using it.
 
 **Pass B — inline enumeration (for properties and ad-hoc counts).** Since the scan script is frontmatter-tags-only, do an inline grep/parse pass to surface:
 

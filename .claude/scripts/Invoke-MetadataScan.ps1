@@ -34,12 +34,24 @@
 
 .PARAMETER Json
     Emit findings as JSON to stdout. Default is human-readable text.
+    NOTE: stdout encoding follows the current console codepage. On Windows
+    (cp1252) this corrupts surrogate-pair emoji characters (e.g., 📚 U+1F4DA)
+    in paths. For vaults with emoji folder names, use -OutFile instead.
+
+.PARAMETER OutFile
+    Write JSON findings to a UTF-8 file (no BOM) at this path via
+    [System.IO.File]::WriteAllText, bypassing the console codepage. This
+    is the correct flag for programmatic consumption when vault paths
+    contain emoji or other non-BMP characters. Mutually exclusive with -Json.
 
 .EXAMPLE
     pwsh.exe -File .claude/scripts/Invoke-MetadataScan.ps1 -VaultRoot .
 
 .EXAMPLE
     pwsh.exe -File .claude/scripts/Invoke-MetadataScan.ps1 -VaultRoot . -Json
+
+.EXAMPLE
+    pwsh.exe -File .claude/scripts/Invoke-MetadataScan.ps1 -VaultRoot . -OutFile scan.json
 #>
 
 [CmdletBinding()]
@@ -48,7 +60,10 @@ param(
     [string]$VaultRoot,
 
     [Parameter()]
-    [switch]$Json
+    [switch]$Json,
+
+    [Parameter()]
+    [string]$OutFile
 )
 
 Process {
@@ -81,7 +96,10 @@ Process {
         unknown_tags = $unknownList
     }
 
-    if ($Json) {
+    if ($OutFile) {
+        Write-UnicodeSafeJson -Output $output -Path $OutFile
+    }
+    elseif ($Json) {
         Write-Output ($output | ConvertTo-Json -Depth 6)
     }
     else {
@@ -286,6 +304,30 @@ Install it once per machine:
                 $Findings.unknown_tags[$tag].Add($relative)
             }
         }
+    }
+
+    function Write-UnicodeSafeJson {
+        <#
+        .SYNOPSIS
+            Serializes findings to JSON and writes via WriteAllText so
+            surrogate-pair emoji characters round-trip correctly. Bypasses
+            PowerShell's console-codepage output path.
+        #>
+        param(
+            [Parameter(Mandatory)]
+            [System.Collections.IDictionary]$Output,
+
+            [Parameter(Mandatory)]
+            [string]$Path
+        )
+
+        $json = $Output | ConvertTo-Json -Depth 6
+        $resolved = [System.IO.Path]::GetFullPath($Path)
+        $dir = [System.IO.Path]::GetDirectoryName($resolved)
+        if ($dir -and -not (Test-Path -LiteralPath $dir)) {
+            $null = New-Item -ItemType Directory -Path $dir -Force
+        }
+        [System.IO.File]::WriteAllText($resolved, $json, [System.Text.UTF8Encoding]::new($false))
     }
 
     function Write-HumanOutput {

@@ -104,32 +104,41 @@ foreach ($scenario in $scenarios) {
         continue
     }
 
+    # Use -OutFile so Unicode path characters round-trip through disk via
+    # UTF-8, rather than stdout via the console codepage (cp1252 on Windows)
+    # which corrupts surrogate-pair emoji. This matches real-world usage
+    # and guards against regression of DeliberateGeek/template-obsidian#40.
+    $actualOutFile = [System.IO.Path]::GetTempFileName()
     try {
-        $actualRaw = & $scriptUnderTest -VaultRoot $scenario.FullName -Json 2>&1
+        & $scriptUnderTest -VaultRoot $scenario.FullName -OutFile $actualOutFile 2>&1 | Out-Null
         $exitCode = $LASTEXITCODE
     }
     catch {
         $failures.Add("[$name] script threw: $_")
         Write-Host "  🚨 $name (script threw: $_)" -ForegroundColor Red
+        if (Test-Path $actualOutFile) { Remove-Item $actualOutFile -Force }
         continue
     }
 
     if ($exitCode -ne 0) {
         $failures.Add("[$name] script exited with code $exitCode")
         Write-Host "  🚨 $name (exit $exitCode)" -ForegroundColor Red
-        Write-Host "     $actualRaw" -ForegroundColor DarkGray
+        if (Test-Path $actualOutFile) { Remove-Item $actualOutFile -Force }
         continue
     }
 
     try {
-        $actualObj = $actualRaw | Out-String | ConvertFrom-Json
+        $actualObj = Get-Content -Path $actualOutFile -Raw -Encoding utf8 | ConvertFrom-Json
         $expectedObj = Get-Content -Path $expectedPath -Raw -Encoding utf8 | ConvertFrom-Json
     }
     catch {
         $failures.Add("[$name] JSON parse failed: $_")
         Write-Host "  🚨 $name (JSON parse: $_)" -ForegroundColor Red
+        Remove-Item $actualOutFile -Force
         continue
     }
+
+    Remove-Item $actualOutFile -Force
 
     $actualCanonical = ConvertTo-CanonicalJson -Input $actualObj
     $expectedCanonical = ConvertTo-CanonicalJson -Input $expectedObj
