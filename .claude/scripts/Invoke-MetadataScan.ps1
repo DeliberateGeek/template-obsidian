@@ -221,9 +221,15 @@ Install it once per machine:
         )
 
         # Exclusion patterns are matched against path segments.
-        # 🫥 Meta and 🫥 Attachments are vault infrastructure. .claude and
-        # .obsidian are dev-infra dot-folders Obsidian itself hides.
-        $excludedSegments = @('.claude', '.obsidian', '🫥 Meta', '🫥 Attachments')
+        # .claude and .obsidian are dev-infra dot-folders Obsidian itself hides.
+        # The 🫥 emoji prefix is the vault-wide convention for metadata/auxiliary
+        # folders (per vault-guide.md); any segment starting with '🫥 ' is
+        # infrastructure and excluded from content scanning. This covers
+        # 🫥 Meta, 🫥 Attachments, 🫥 Templates, 🫥 Templater, and any future
+        # 🫥-prefixed folder including compound-emoji variants like
+        # "🫥 📂 Attachments".
+        $excludedLiteralSegments = @('.claude', '.obsidian')
+        $infraFolderPrefix = '🫥 '
 
         $files = Get-ChildItem -Path $VaultRoot -Recurse -File -Filter '*.md' -Force
         $results = [System.Collections.Generic.List[string]]::new()
@@ -233,7 +239,8 @@ Install it once per machine:
             $segments = $relative -split '[\\/]'
             $excluded = $false
             foreach ($seg in $segments) {
-                if ($excludedSegments -contains $seg) { $excluded = $true; break }
+                if ($excludedLiteralSegments -contains $seg) { $excluded = $true; break }
+                if ($seg.StartsWith($infraFolderPrefix)) { $excluded = $true; break }
             }
             if (-not $excluded) {
                 $results.Add($file.FullName)
